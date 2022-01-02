@@ -10,7 +10,6 @@ use std::collections::HashSet;
 use std::str::FromStr;
 use std::time::Duration;
 
-use async_trait::async_trait;
 use futures::stream::{self, TryStreamExt as _};
 use measurements::{Frequency, Power};
 
@@ -22,7 +21,7 @@ use crate::cli::parser::frequency::Megahertz;
 use crate::cli::parser::number::Integer;
 use crate::cli::parser::power::Watts;
 use crate::cli::parser::time::Microseconds;
-use crate::cli::{ARGS, Arg};
+use crate::cli::{Arg, NAME};
 use crate::util::convert::*;
 use crate::*;
 
@@ -61,12 +60,12 @@ impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
 
 #[derive(Debug)]
 pub(crate) struct Parser<'a> {
-    args: &'a [Arg],
-    matches: clap::ArgMatches<'a>,
+    pub(super) args: &'a [Arg],
+    pub(super) matches: clap::ArgMatches<'a>,
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn new(args: &'a [Arg], argv: &[String]) -> Result<Self> {
+    pub(super) fn new(args: &'a [Arg], argv: &[String]) -> Result<Self> {
         let clap_args: Vec<clap::Arg> = args.iter().map(From::from).collect();
         let matches = clap::App::new(NAME)
             .setting(clap::AppSettings::DeriveDisplayOrder)
@@ -137,18 +136,11 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn flag(&self, name: &str) -> Option<()> {
-        if self.matches.is_present(name) {
-            Some(())
-        } else {
-            None
-        }
+        if self.matches.is_present(name) { Some(()) } else { None }
     }
 
     pub(crate) fn int<I: Integer>(&self, name: &str) -> Result<Option<I>> {
-        self.str(name)
-            .map(I::parse)
-            .transpose()
-            .map_err(|e| Error::parse_flag(name, e))
+        self.str(name).map(I::parse).transpose().map_err(|e| Error::parse_flag(name, e))
     }
 
     pub(crate) fn megahertz(&self, name: &str) -> Result<Option<Frequency>> {
@@ -190,6 +182,7 @@ impl<'a> Parser<'a> {
         subzone_name: &str,
         constraint_name: &str,
     ) -> Result<Option<(u64, Option<u64>, u64)>> {
+        // FIXME decompose
         if let Some(package) = self.int::<u64>(package_name)? {
             if let Some(constraint) = self.int::<u64>(constraint_name)? {
                 let subzone = self.int::<u64>(subzone_name)?;
@@ -235,9 +228,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn strs(&self, name: &str) -> Option<Vec<&str>> {
-        self.matches
-            .values_of(name)
-            .map(|v| v.into_iter().collect())
+        self.matches.values_of(name).map(|v| v.into_iter().collect())
     }
 
     pub(crate) fn string(&self, name: &str) -> Option<String> {
@@ -245,8 +236,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn strings(&self, name: &str) -> Option<Vec<String>> {
-        self.strs(name)
-            .map(|v| v.into_iter().map(String::from).collect())
+        self.strs(name).map(|v| v.into_iter().map(String::from).collect())
     }
 
     pub(crate) fn watts(&self, name: &str) -> Result<Option<Power>> {
@@ -258,38 +248,3 @@ impl<'a> Parser<'a> {
             .map(Into::into))
     }
 }
-
-#[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for Group {
-    type Error = Error;
-
-    async fn try_from_ref(v: &Parser<'a>) -> Result<Self> {
-        let r = Self {
-            cpu: Cpu::try_from_ref(v).await?,
-            i915: I915::try_from_ref(v).await?,
-            nvml: Nvml::try_from_ref(v).await?,
-            rapl: Rapl::try_from_ref(v).await?,
-        };
-        Ok(r)
-    }
-}
-
-#[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for Groups {
-    type Error = Error;
-
-    async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
-        let mut profiles = vec![];
-        let mut args = p.strings(ARGS);
-        profiles.push(p.try_ref_into().await?);
-        while let Some(mut a) = args {
-            a.insert(0, NAME.to_string());
-            let p = Parser::new(p.args, &a)?;
-            args = p.strings(ARGS);
-            profiles.push(p.try_ref_into().await?);
-        }
-        let r = Groups(profiles);
-        Ok(r)
-    }
-}
-

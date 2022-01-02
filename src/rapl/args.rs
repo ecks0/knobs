@@ -22,9 +22,7 @@ impl<'a> TryFromRef<Parser<'a>> for super::Rapl {
 
     async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
         let r = Self {
-            rapl_constraint: p
-                .rapl_constraint(RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT)
-                .await?,
+            rapl_constraint: p.rapl_constraint(RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT).await?,
             rapl_limit: p.watts(RAPL_LIMIT)?,
             rapl_window: p.microseconds(RAPL_WINDOW)?,
         };

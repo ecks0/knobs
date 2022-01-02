@@ -21,11 +21,8 @@ impl I915 {
     }
 
     pub(crate) fn is_empty(&self) -> bool {
-        self.i915.as_ref().map(|v| v.is_empty()).unwrap_or(true) || (
-            self.i915_min.is_none() &&
-            self.i915_max.is_none() &&
-            self.i915_boost.is_none()
-        )
+        self.i915.as_ref().map(|v| v.is_empty()).unwrap_or(true)
+            || (self.i915_min.is_none() && self.i915_max.is_none() && self.i915_boost.is_none())
     }
 
     pub(crate) async fn apply(&self) -> Result<()> {

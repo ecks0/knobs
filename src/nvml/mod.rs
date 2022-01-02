@@ -21,11 +21,10 @@ impl Nvml {
     }
 
     pub(crate) fn is_empty(&self) -> bool {
-        self.nvml.as_ref().map(|v| v.is_empty()).unwrap_or(true) || (
-            self.nvml_gpu_min.is_none() &&
-            self.nvml_gpu_max.is_none() &&
-            self.nvml_power.is_none()
-        )
+        self.nvml.as_ref().map(|v| v.is_empty()).unwrap_or(true)
+            || (self.nvml_gpu_min.is_none()
+                && self.nvml_gpu_max.is_none()
+                && self.nvml_power.is_none())
     }
 
     pub(crate) async fn apply(&self) -> Result<()> {

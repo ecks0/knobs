@@ -11,12 +11,8 @@ pub(super) async fn tabulate() -> Option<String> {
         cards.sort_by_key(|v| v.id());
         let mut tab = Table::new(&["DRM ", "Bus ", "Bus id"]);
         for card in cards {
-            let (bus, bus_id) = card
-                .bus_id()
-                .await
-                .ok()
-                .map(|v| (Some(v.bus), Some(v.id)))
-                .unwrap_or((None, None));
+            let (bus, bus_id) =
+                card.bus_id().await.ok().map(|v| (Some(v.bus), Some(v.id))).unwrap_or((None, None));
             tab.row(&[
                 card.id().to_string(),
                 bus.unwrap_or_else(dot),

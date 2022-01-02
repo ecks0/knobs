@@ -115,8 +115,8 @@ fn cpu_help() -> String {
 }
 
 fn cpu_help_long() -> String {
-    "Target cpu ids as a comma-delimited list of integers and/or ranges. Range syntax: X..Y X.. \
-     ..Y .."
+    "Target cpu ids as a comma-delimited list of integers and/or inclusive ranges. Range syntax: \
+     X..Y X.. ..Y .."
         .to_string()
 }
 

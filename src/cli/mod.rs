@@ -1,10 +1,14 @@
+mod group;
 mod parser;
 
-pub(crate) use parser::{I915Driver, NvmlDriver, Parser};
 use tokio::io::{stderr, stdout, AsyncWrite, AsyncWriteExt as _};
 
+use crate::cli::group::Groups;
+pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
 use crate::util::convert::*;
-use crate::{Cpu, Drm, Error, Nvml, Groups, Rapl, Result, I915};
+use crate::{Cpu, Drm, Error, Nvml, Rapl, Result, I915};
+
+const NAME: &str = "knobs";
 
 const QUIET: &str = "quiet";
 const SHOW_CPU: &str = "show-cpu";
@@ -62,13 +66,11 @@ fn args_before() -> Vec<Arg> {
 }
 
 fn args_after() -> Vec<Arg> {
-    vec![
-        Arg {
-            name: ARGS.into(),
-            raw: true.into(),
-            ..Default::default()
-        },
-    ]
+    vec![Arg {
+        name: ARGS.into(),
+        raw: true.into(),
+        ..Default::default()
+    }]
 }
 
 fn args() -> impl Iterator<Item = Arg> {
@@ -144,20 +146,18 @@ async fn tabulate(parser: &Parser<'_>, groups: &Groups) -> Result<()> {
     Ok(())
 }
 
-async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
+pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
     let argv: Vec<_> = argv.into_iter().collect();
     let args: Vec<_> = args().collect();
     let parser = Parser::new(&args, &argv)?;
-    let quiet = parser.flag(QUIET).is_some();
     let groups = Groups::try_from_ref(&parser).await?;
     groups.apply().await?;
-    if !quiet {
+    if parser.flag(QUIET).is_none() {
         tabulate(&parser, &groups).await?;
     }
     Ok(())
 }
-
-async fn run_with_args(argv: impl IntoIterator<Item = String>) {
+pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
     if let Err(e) = try_run_with_args(argv).await {
         match e {
             Error::Clap(e) => {

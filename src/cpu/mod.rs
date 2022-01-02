@@ -24,25 +24,20 @@ impl Cpu {
     }
 
     pub(crate) fn is_empty(&self) -> bool {
-        !(
-            self.has_online_values() ||
-            self.has_policy_values()
-        )
+        !(self.has_online_values() || self.has_policy_values())
     }
 
     pub(crate) fn has_online_values(&self) -> bool {
-        self.cpu.as_ref().map(|v| !v.is_empty()).unwrap_or(false) &&
-        self.cpu_on.is_some()
+        self.cpu.as_ref().map(|v| !v.is_empty()).unwrap_or(false) && self.cpu_on.is_some()
     }
 
     pub(crate) fn has_policy_values(&self) -> bool {
-        self.cpu.as_ref().map(|v| !v.is_empty()).unwrap_or(false) && (
-            self.cpu_gov.is_some() ||
-            self.cpu_min.is_some() ||
-            self.cpu_max.is_some() ||
-            self.cpu_epb.is_some() ||
-            self.cpu_epp.is_some()
-        )
+        self.cpu.as_ref().map(|v| !v.is_empty()).unwrap_or(false)
+            && (self.cpu_gov.is_some()
+                || self.cpu_min.is_some()
+                || self.cpu_max.is_some()
+                || self.cpu_epb.is_some()
+                || self.cpu_epp.is_some())
     }
 
     pub(crate) async fn apply_online(&self) -> Result<()> {

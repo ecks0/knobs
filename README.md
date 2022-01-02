@@ -83,6 +83,9 @@ Error: write: /sys/devices/system/cpu/cpufreq/policy0/scaling_governor: Permissi
 $
 ```
 
+The `--quiet` and `--show-*` flags are parsed only for the first argument group. All
+other flags are parsed for all argument groups.
+
 ## Output
 
 With no arguments, knobs will show tables for all supported devices detected on the system.

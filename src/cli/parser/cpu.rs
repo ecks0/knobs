@@ -43,11 +43,7 @@ where
                 } else {
                     let start = T::parse(start)?;
                     let end = T::parse(end)?;
-                    let r = if start <= end {
-                        start..=end
-                    } else {
-                        end..=start
-                    };
+                    let r = if start <= end { start..=end } else { end..=start };
                     Self::Inclusive(r)
                 };
                 Ok(r)

@@ -40,16 +40,8 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.gfx_max_freq().await.ok().map(mhz).unwrap_or_else(dot),
                 card.power().await.ok().map(mw).unwrap_or_else(dot),
                 card.power_limit().await.ok().map(mw).unwrap_or_else(dot),
-                card.power_min_limit()
-                    .await
-                    .ok()
-                    .map(mw)
-                    .unwrap_or_else(dot),
-                card.power_max_limit()
-                    .await
-                    .ok()
-                    .map(mw)
-                    .unwrap_or_else(dot),
+                card.power_min_limit().await.ok().map(mw).unwrap_or_else(dot),
+                card.power_max_limit().await.ok().map(mw).unwrap_or_else(dot),
             ])
         }
         Some(tab.to_string())

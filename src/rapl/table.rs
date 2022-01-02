@@ -33,7 +33,7 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
     }
 }
 
-async fn usage(zone: ZoneId) -> (ZoneId, Option<u64>) {
+async fn energy_uj(zone: ZoneId) -> (ZoneId, Option<u64>) {
     const INTERVAL: Duration = Duration::from_millis(200);
     const SCALE: u64 = 1000 / INTERVAL.as_millis() as u64;
 
@@ -48,12 +48,10 @@ async fn usage(zone: ZoneId) -> (ZoneId, Option<u64>) {
     (zone, None)
 }
 
-async fn usages(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
-    let f = zones.iter().map(|v| usage(v.id()));
+async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
+    let f = zones.iter().map(|v| energy_uj(v.id()));
     let f: Vec<_> = f.map(tokio::spawn).collect();
-    try_join_all(f)
-        .await
-        .expect("join rapl usage sampler tasks")
+    try_join_all(f).await.expect("join rapl energy_uj sampler tasks")
 }
 
 pub(super) async fn tabulate() -> Option<String> {
@@ -71,19 +69,19 @@ pub(super) async fn tabulate() -> Option<String> {
             "Short win",
             "Usage",
         ]);
-        let usages = usages(&zones).await;
+        let energy_ujs = energy_ujs(&zones).await;
         for zone in zones {
             let (long_lim, long_win) = limit_window(&zone, LONG_TERM).await;
             let (short_lim, short_win) = limit_window(&zone, SHORT_TERM).await;
-            let usage = usages.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
+            let energy_uj = energy_ujs.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
             tab.row(&[
                 format_zone_id(zone.id()),
-                zone.name().await.ok().map(String::from).unwrap_or_else(dot),
+                zone.name().await.ok().unwrap_or_else(dot),
                 long_lim.map(uw).unwrap_or_else(dot),
                 short_lim.map(uw).unwrap_or_else(dot),
                 long_win.map(us).unwrap_or_else(dot),
                 short_win.map(us).unwrap_or_else(dot),
-                usage.map(uw).unwrap_or_else(dot),
+                energy_uj.map(uw).unwrap_or_else(dot),
             ]);
         }
         Some(tab.to_string())

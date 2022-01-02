@@ -28,45 +28,16 @@ async fn cpu_cpufreq(cpus: &[Cpu], cpufreqs: &[Cpufreq]) -> Option<String> {
         for cpu in cpus {
             let mut row = vec![
                 cpu.id().to_string(),
-                cpu.online()
-                    .await
-                    .ok()
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(dot),
+                cpu.online().await.ok().map(|v| v.to_string()).unwrap_or_else(dot),
             ];
             if let Some(cpufreq) = cpufreqs.iter().find(|v| v.id() == cpu.id()) {
                 row.extend([
                     cpufreq.scaling_governor().await.ok().unwrap_or_else(dot),
-                    cpufreq
-                        .scaling_cur_freq()
-                        .await
-                        .ok()
-                        .map(khz)
-                        .unwrap_or_else(dot),
-                    cpufreq
-                        .scaling_min_freq()
-                        .await
-                        .ok()
-                        .map(khz)
-                        .unwrap_or_else(dot),
-                    cpufreq
-                        .scaling_max_freq()
-                        .await
-                        .ok()
-                        .map(khz)
-                        .unwrap_or_else(dot),
-                    cpufreq
-                        .cpuinfo_min_freq()
-                        .await
-                        .ok()
-                        .map(khz)
-                        .unwrap_or_else(dot),
-                    cpufreq
-                        .cpuinfo_max_freq()
-                        .await
-                        .ok()
-                        .map(khz)
-                        .unwrap_or_else(dot),
+                    cpufreq.scaling_cur_freq().await.ok().map(khz).unwrap_or_else(dot),
+                    cpufreq.scaling_min_freq().await.ok().map(khz).unwrap_or_else(dot),
+                    cpufreq.scaling_max_freq().await.ok().map(khz).unwrap_or_else(dot),
+                    cpufreq.cpuinfo_min_freq().await.ok().map(khz).unwrap_or_else(dot),
+                    cpufreq.cpuinfo_max_freq().await.ok().map(khz).unwrap_or_else(dot),
                 ]);
             } else {
                 row.extend([dot(), dot(), dot(), dot(), dot(), dot()]);
@@ -83,11 +54,7 @@ async fn governors(cpufreqs: &[Cpufreq]) -> Option<String> {
     } else {
         let mut govs: Vec<String> = iter(cpufreqs.iter())
             .then(|v| async move {
-                v.scaling_available_governors()
-                    .await
-                    .ok()
-                    .map(|g| g.join(" "))
-                    .unwrap_or_else(dot)
+                v.scaling_available_governors().await.ok().map(|g| g.join(" ")).unwrap_or_else(dot)
             })
             .collect()
             .await;
@@ -121,11 +88,7 @@ async fn pstate_status(system: &PstateSystem) -> Option<String> {
     if !system.is_active().await.unwrap_or(false) {
         // Print the status when not active so that the user
         // knows why they're not seeing the epb/epp tables.
-        system
-            .status()
-            .await
-            .ok()
-            .map(|v| format!(" intel_pstate: {}\n", v))
+        system.status().await.ok().map(|v| format!(" intel_pstate: {}\n", v))
     } else {
         None
     }
@@ -144,11 +107,7 @@ async fn epb_epp(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<Str
                     .as_ref()
                     .map(ToString::to_string)
                     .unwrap_or_else(dot);
-                let epp = v
-                    .energy_performance_preference()
-                    .await
-                    .ok()
-                    .unwrap_or_else(dot);
+                let epp = v.energy_performance_preference().await.ok().unwrap_or_else(dot);
                 (epb, epp)
             })
             .collect()
@@ -173,11 +132,7 @@ async fn epb_epp(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<Str
                             .as_ref()
                             .map(ToString::to_string)
                             .unwrap_or_else(dot),
-                        policy
-                            .energy_performance_preference()
-                            .await
-                            .ok()
-                            .unwrap_or_else(dot),
+                        policy.energy_performance_preference().await.ok().unwrap_or_else(dot),
                     ]);
                 }
             }
@@ -244,9 +199,5 @@ pub(super) async fn tabulate() -> Option<String> {
     .into_iter()
     .flatten()
     .collect();
-    if tables.is_empty() {
-        None
-    } else {
-        Some(tables.join("\n"))
-    }
+    if tables.is_empty() { None } else { Some(tables.join("\n")) }
 }

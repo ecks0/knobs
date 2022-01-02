@@ -25,11 +25,7 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.cur_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.min_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.max_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
-                card.boost_freq_mhz()
-                    .await
-                    .ok()
-                    .map(mhz)
-                    .unwrap_or_else(dot),
+                card.boost_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.rpn_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.rp0_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
             ]);

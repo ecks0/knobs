@@ -3,23 +3,19 @@ mod cpu;
 mod drm;
 mod i915;
 mod nvml;
-mod group;
 mod rapl;
 mod util;
 
 pub use clap::Error as ClapError;
-pub(crate) use cpu::Cpu;
-pub(crate) use drm::Drm;
-pub(crate) use i915::I915;
-pub(crate) use nvml::Nvml;
-pub(crate) use group::{Groups, Group};
-pub(crate) use rapl::Rapl;
 pub use syx::Error as SyxError;
 pub use tokio::io::Error as IoError;
 
-pub use crate::cli::run;
-
-const NAME: &str = "knobs";
+pub use crate::cli::{run, run_with_args, try_run_with_args};
+pub(crate) use crate::cpu::Cpu;
+pub(crate) use crate::drm::Drm;
+pub(crate) use crate::i915::I915;
+pub(crate) use crate::nvml::Nvml;
+pub(crate) use crate::rapl::Rapl;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
