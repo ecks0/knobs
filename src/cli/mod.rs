@@ -102,15 +102,15 @@ async fn eprint(msg: &str, nl: bool) {
     write(&mut w, msg, nl).await
 }
 
-async fn tabulate(parser: &Parser<'_>, profiles: &Groups) -> Result<()> {
+async fn tabulate(parser: &Parser<'_>, groups: &Groups) -> Result<()> {
     let show_cpu = parser.flag(SHOW_CPU).is_some();
     let show_rapl = parser.flag(SHOW_RAPL).is_some();
     let show_drm = parser.flag(SHOW_DRM).is_some();
     let has_show_flags = show_cpu || show_rapl || show_drm;
-    let has_cpu_vals = profiles.has_cpu_values();
-    let has_rapl_vals = profiles.has_rapl_values();
-    let has_i915_vals = profiles.has_i915_values();
-    let has_nvml_vals = profiles.has_nvml_values();
+    let has_cpu_vals = groups.has_cpu_values();
+    let has_rapl_vals = groups.has_rapl_values();
+    let has_i915_vals = groups.has_i915_values();
+    let has_nvml_vals = groups.has_nvml_values();
     let has_drm_vals = has_i915_vals || has_nvml_vals;
     let has_vals = has_cpu_vals || has_rapl_vals || has_drm_vals;
     let mut tables = vec![];
@@ -149,10 +149,10 @@ async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()>
     let args: Vec<_> = args().collect();
     let parser = Parser::new(&args, &argv)?;
     let quiet = parser.flag(QUIET).is_some();
-    let profiles = Groups::try_from_ref(&parser).await?;
-    profiles.apply().await?;
+    let groups = Groups::try_from_ref(&parser).await?;
+    groups.apply().await?;
     if !quiet {
-        tabulate(&parser, &profiles).await?;
+        tabulate(&parser, &groups).await?;
     }
     Ok(())
 }
