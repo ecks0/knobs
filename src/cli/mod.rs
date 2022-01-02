@@ -170,7 +170,7 @@ async fn run_with_args(argv: impl IntoIterator<Item = String>) {
         match e {
             Error::Clap(e) => {
                 if let clap::ErrorKind::HelpDisplayed = e.kind {
-                    print(&e.message, true).await;
+                    print(&e.to_string(), false).await;
                     std::process::exit(0);
                 } else {
                     eprint(&e.to_string(), true).await;

@@ -41,10 +41,10 @@ impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
             a = a.takes_value(true).value_name(value_name);
         }
         if let Some(help) = &v.help {
-            a = a.help(help);
+            a = a.help(help.as_str());
         }
         if let Some(help_long) = &v.help_long {
-            a = a.long_help(help_long);
+            a = a.long_help(help_long.as_str());
         }
         if let Some(requires) = &v.requires {
             for required in requires {
