@@ -4,12 +4,11 @@ pub(crate) use parser::{I915Driver, NvmlDriver, Parser};
 use tokio::io::{stderr, stdout, AsyncWrite, AsyncWriteExt as _};
 
 use crate::util::convert::*;
-use crate::{Cpu, Error, Nvml, Groups, Rapl, Result, I915};
+use crate::{Cpu, Drm, Error, Nvml, Groups, Rapl, Result, I915};
 
 const QUIET: &str = "quiet";
 const SHOW_CPU: &str = "show-cpu";
-const SHOW_I915: &str = "show-i915";
-const SHOW_NVML: &str = "show-nvml";
+const SHOW_DRM: &str = "show-drm";
 const SHOW_RAPL: &str = "show-rapl";
 const ARGS: &str = "ARGS";
 
@@ -35,38 +34,27 @@ fn args_before() -> Vec<Arg> {
             long: QUIET.into(),
             short: QUIET_SHORT.into(),
             help: "Do not print tables".to_string().into(),
-            conflicts: vec![SHOW_CPU, SHOW_RAPL, SHOW_I915, SHOW_NVML].into(),
+            conflicts: vec![SHOW_CPU, SHOW_RAPL, SHOW_DRM].into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_CPU.into(),
             long: SHOW_CPU.into(),
-            value_name: None,
-            help: "Show cpu table".to_string().into(),
+            help: "Show cpu tables".to_string().into(),
             conflicts: vec![QUIET].into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_RAPL.into(),
             long: SHOW_RAPL.into(),
-            value_name: None,
             help: "Show rapl table".to_string().into(),
             conflicts: vec![QUIET].into(),
             ..Default::default()
         },
         Arg {
-            name: SHOW_I915.into(),
-            long: SHOW_I915.into(),
-            value_name: None,
-            help: "Show i915 table".to_string().into(),
-            conflicts: vec![QUIET].into(),
-            ..Default::default()
-        },
-        Arg {
-            name: SHOW_NVML.into(),
-            long: SHOW_NVML.into(),
-            value_name: None,
-            help: "Show nvml table".to_string().into(),
+            name: SHOW_DRM.into(),
+            long: SHOW_DRM.into(),
+            help: "Show drm tables".to_string().into(),
             conflicts: vec![QUIET].into(),
             ..Default::default()
         },
@@ -117,31 +105,32 @@ async fn eprint(msg: &str, nl: bool) {
 async fn tabulate(parser: &Parser<'_>, profiles: &Groups) -> Result<()> {
     let show_cpu = parser.flag(SHOW_CPU).is_some();
     let show_rapl = parser.flag(SHOW_RAPL).is_some();
-    let show_i915 = parser.flag(SHOW_I915).is_some();
-    let show_nvml = parser.flag(SHOW_NVML).is_some();
-    let has_show_flags = show_cpu || show_rapl || show_i915 || show_nvml;
+    let show_drm = parser.flag(SHOW_DRM).is_some();
+    let has_show_flags = show_cpu || show_rapl || show_drm;
     let has_cpu_vals = profiles.has_cpu_values();
     let has_rapl_vals = profiles.has_rapl_values();
     let has_i915_vals = profiles.has_i915_values();
     let has_nvml_vals = profiles.has_nvml_values();
-    let has_values = has_cpu_vals || has_rapl_vals || has_i915_vals || has_nvml_vals;
+    let has_drm_vals = has_i915_vals || has_nvml_vals;
+    let has_vals = has_cpu_vals || has_rapl_vals || has_drm_vals;
     let mut tables = vec![];
-    if (!has_values && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
+    if (!has_vals && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
         if let Some(v) = Cpu::tabulate().await {
             tables.push(v);
         }
     }
-    if (!has_values && !has_show_flags) || (has_rapl_vals && !has_show_flags) || show_rapl {
+    if (!has_vals && !has_show_flags) || (has_rapl_vals && !has_show_flags) || show_rapl {
         if let Some(v) = Rapl::tabulate().await {
             tables.push(v);
         }
     }
-    if (!has_values && !has_show_flags) || (has_i915_vals && !has_show_flags) || show_i915 {
+    if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
+        if let Some(v) = Drm::tabulate().await {
+            tables.push(v);
+        }
         if let Some(v) = I915::tabulate().await {
             tables.push(v);
         }
-    }
-    if (!has_values && !has_show_flags) || (has_nvml_vals && !has_show_flags) || show_nvml {
         if let Some(v) = Nvml::tabulate().await {
             tables.push(v);
         }

@@ -22,10 +22,9 @@ USAGE:
 
 OPTIONS:
     -q, --quiet                    Do not print tables
-        --show-cpu                 Show cpu table
+        --show-cpu                 Show cpu tables
         --show-rapl                Show rapl table
-        --show-i915                Show i915 table
-        --show-nvml                Show nvml table
+        --show-drm                 Show drm tables
     -c, --cpu <IDS>                Target cpu ids
     -o, --cpu-on <BOOL>            Set cpu online or offline
     -g, --cpu-gov <STR>            Set cpu governor
@@ -91,7 +90,7 @@ With no arguments, knobs will show tables for all supported devices detected on 
 With arguments, after writing device values, knobs will show tables for devices related to
 the given arguments.
 
-Particular tables may be displayed with the `--show-*` arguments, the use of which
+Particular table topics may be displayed with the `--show-*` arguments, the use of which
 overrides the default table handling behavior descibed above.
 
 Output may be silenced with `--quiet`.

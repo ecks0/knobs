@@ -1,5 +1,6 @@
 mod cli;
 mod cpu;
+mod drm;
 mod i915;
 mod nvml;
 mod group;
@@ -8,6 +9,7 @@ mod util;
 
 pub use clap::Error as ClapError;
 pub(crate) use cpu::Cpu;
+pub(crate) use drm::Drm;
 pub(crate) use i915::I915;
 pub(crate) use nvml::Nvml;
 pub(crate) use group::{Groups, Group};
