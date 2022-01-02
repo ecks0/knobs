@@ -54,6 +54,9 @@ impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
                 a = a.conflicts_with(conflicted);
             }
         }
+        if let Some(raw) = v.raw {
+            a = a.raw(raw);
+        }
         a
     }
 }
