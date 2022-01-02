@@ -27,44 +27,39 @@ impl<'a> TryFromRef<Parser<'a>> for super::Nvml {
 pub(super) fn args() -> Vec<Arg> {
     vec![
         Arg {
-            name: NVML,
+            name: NVML.into(),
             long: NVML.into(),
-            short: None,
             value_name: "IDS".into(),
             help: nvml_help().into(),
             help_long: nvml_help_long().into(),
-            requires: None,
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: NVML_GPU_MIN,
+            name: NVML_GPU_MIN.into(),
             long: NVML_GPU_MIN.into(),
-            short: None,
             value_name: "MHZ".into(),
             help: nvml_gpu_min_help().into(),
             help_long: nvml_gpu_min_help_long().into(),
             requires: vec![NVML].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: NVML_GPU_MAX,
+            name: NVML_GPU_MAX.into(),
             long: NVML_GPU_MAX.into(),
-            short: None,
             value_name: "MHZ".into(),
             help: nvml_gpu_max_help().into(),
             help_long: nvml_gpu_max_help_long().into(),
             requires: vec![NVML].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: NVML_POWER,
+            name: NVML_POWER.into(),
             long: NVML_POWER.into(),
-            short: None,
             value_name: "WATTS".into(),
             help: nvml_power_help().into(),
             help_long: nvml_power_help_long().into(),
             requires: vec![NVML].into(),
-            conflicts: None,
+            ..Default::default()
         },
     ]
 }
@@ -95,9 +90,9 @@ fn nvml_gpu_max_help_long() -> String {
 }
 
 fn nvml_power_help() -> String {
-    "Set nvml card power limit in watts".to_string()
+    "Set nvml device power limit in watts".to_string()
 }
 
 fn nvml_power_help_long() -> String {
-    format!("Set nvml card power limit in watts per --{}", NVML)
+    format!("Set nvml device power limit in watts per --{}", NVML)
 }

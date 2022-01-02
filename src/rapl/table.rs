@@ -34,11 +34,11 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
 }
 
 async fn usage(zone: ZoneId) -> (ZoneId, Option<u64>) {
-    const SAMPLE_INTERVAL: Duration = Duration::from_millis(200);
-    const SCALE: u64 = 1000 / SAMPLE_INTERVAL.as_millis() as u64;
+    const INTERVAL: Duration = Duration::from_millis(200);
+    const SCALE: u64 = 1000 / INTERVAL.as_millis() as u64;
 
     if let Ok(a) = zone::energy_uj(zone).await {
-        sleep(SAMPLE_INTERVAL).await;
+        sleep(INTERVAL).await;
         if let Ok(b) = zone::energy_uj(zone).await {
             let v = b - a;
             let v = v * SCALE;
@@ -49,7 +49,8 @@ async fn usage(zone: ZoneId) -> (ZoneId, Option<u64>) {
 }
 
 async fn usages(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
-    let f: Vec<_> = zones.iter().map(|v| tokio::spawn(usage(v.id()))).collect();
+    let f = zones.iter().map(|v| usage(v.id()));
+    let f: Vec<_> = f.map(tokio::spawn).collect();
     try_join_all(f)
         .await
         .expect("join rapl usage sampler tasks")

@@ -27,44 +27,39 @@ impl<'a> TryFromRef<Parser<'a>> for super::I915 {
 pub(super) fn args() -> impl IntoIterator<Item = Arg> {
     vec![
         Arg {
-            name: I915,
+            name: I915.into(),
             long: I915.into(),
-            short: None,
             value_name: "IDS".into(),
             help: i915_help().into(),
             help_long: i915_help_long().into(),
-            requires: None,
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: I915_MIN,
+            name: I915_MIN.into(),
             long: I915_MIN.into(),
-            short: None,
             value_name: "MHZ".into(),
             help: i915_min_help().into(),
             help_long: i915_min_help_long().into(),
             requires: vec![I915].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: I915_MAX,
+            name: I915_MAX.into(),
             long: I915_MAX.into(),
-            short: None,
             value_name: "MHZ".into(),
             help: i915_max_help().into(),
             help_long: i915_max_help_long().into(),
             requires: vec![I915].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: I915_BOOST,
+            name: I915_BOOST.into(),
             long: I915_BOOST.into(),
-            short: None,
             value_name: "MHZ".into(),
             help: i915_boost_help().into(),
             help_long: i915_boost_help_long().into(),
             requires: vec![I915].into(),
-            conflicts: None,
+            ..Default::default()
         },
     ]
 }

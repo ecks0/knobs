@@ -20,7 +20,6 @@ impl I915 {
         args::args()
     }
 
-    #[rustfmt::skip]
     pub(crate) fn is_empty(&self) -> bool {
         self.i915.as_ref().map(|v| v.is_empty()).unwrap_or(true) || (
             self.i915_min.is_none() &&

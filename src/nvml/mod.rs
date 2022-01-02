@@ -20,7 +20,6 @@ impl Nvml {
         args::args()
     }
 
-    #[rustfmt::skip]
     pub(crate) fn is_empty(&self) -> bool {
         self.nvml.as_ref().map(|v| v.is_empty()).unwrap_or(true) || (
             self.nvml_gpu_min.is_none() &&

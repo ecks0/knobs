@@ -4,19 +4,20 @@ pub(crate) use parser::{I915Driver, NvmlDriver, Parser};
 use tokio::io::{stderr, stdout, AsyncWrite, AsyncWriteExt as _};
 
 use crate::util::convert::*;
-use crate::{Cpu, Error, Nvml, Profiles, Rapl, Result, I915};
+use crate::{Cpu, Error, Nvml, Groups, Rapl, Result, I915};
 
 const QUIET: &str = "quiet";
 const SHOW_CPU: &str = "show-cpu";
 const SHOW_I915: &str = "show-i915";
 const SHOW_NVML: &str = "show-nvml";
 const SHOW_RAPL: &str = "show-rapl";
+const ARGS: &str = "ARGS";
 
 const QUIET_SHORT: &str = "q";
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct Arg {
-    pub(crate) name: &'static str,
+    pub(crate) name: Option<&'static str>,
     pub(crate) long: Option<&'static str>,
     pub(crate) short: Option<&'static str>,
     pub(crate) value_name: Option<&'static str>,
@@ -24,70 +25,72 @@ pub(crate) struct Arg {
     pub(crate) help_long: Option<String>,
     pub(crate) requires: Option<Vec<&'static str>>,
     pub(crate) conflicts: Option<Vec<&'static str>>,
+    pub(crate) raw: Option<bool>,
 }
 
-fn table_args() -> Vec<Arg> {
+fn args_before() -> Vec<Arg> {
     vec![
         Arg {
-            name: QUIET,
+            name: QUIET.into(),
             long: QUIET.into(),
             short: QUIET_SHORT.into(),
-            value_name: None,
             help: "Do not print tables".to_string().into(),
-            help_long: None,
-            requires: None,
             conflicts: vec![SHOW_CPU, SHOW_RAPL, SHOW_I915, SHOW_NVML].into(),
+            ..Default::default()
         },
         Arg {
-            name: SHOW_CPU,
+            name: SHOW_CPU.into(),
             long: SHOW_CPU.into(),
-            short: None,
             value_name: None,
             help: "Show cpu table".to_string().into(),
-            help_long: None,
-            requires: None,
             conflicts: vec![QUIET].into(),
+            ..Default::default()
         },
         Arg {
-            name: SHOW_RAPL,
+            name: SHOW_RAPL.into(),
             long: SHOW_RAPL.into(),
-            short: None,
             value_name: None,
             help: "Show rapl table".to_string().into(),
-            help_long: None,
-            requires: None,
             conflicts: vec![QUIET].into(),
+            ..Default::default()
         },
         Arg {
-            name: SHOW_I915,
+            name: SHOW_I915.into(),
             long: SHOW_I915.into(),
-            short: None,
             value_name: None,
             help: "Show i915 table".to_string().into(),
-            help_long: None,
-            requires: None,
             conflicts: vec![QUIET].into(),
+            ..Default::default()
         },
         Arg {
-            name: SHOW_NVML,
+            name: SHOW_NVML.into(),
             long: SHOW_NVML.into(),
-            short: None,
             value_name: None,
             help: "Show nvml table".to_string().into(),
-            help_long: None,
-            requires: None,
             conflicts: vec![QUIET].into(),
+            ..Default::default()
+        },
+    ]
+}
+
+fn args_after() -> Vec<Arg> {
+    vec![
+        Arg {
+            name: ARGS.into(),
+            raw: true.into(),
+            ..Default::default()
         },
     ]
 }
 
 fn args() -> impl Iterator<Item = Arg> {
-    table_args()
+    args_before()
         .into_iter()
         .chain(Cpu::args())
         .chain(Rapl::args())
         .chain(I915::args())
         .chain(Nvml::args())
+        .chain(args_after())
 }
 
 async fn write<W>(w: &mut W, msg: &str, nl: bool)
@@ -111,7 +114,7 @@ async fn eprint(msg: &str, nl: bool) {
     write(&mut w, msg, nl).await
 }
 
-async fn tabulate(parser: &Parser<'_>, profiles: &Profiles) -> Result<()> {
+async fn tabulate(parser: &Parser<'_>, profiles: &Groups) -> Result<()> {
     let show_cpu = parser.flag(SHOW_CPU).is_some();
     let show_rapl = parser.flag(SHOW_RAPL).is_some();
     let show_i915 = parser.flag(SHOW_I915).is_some();
@@ -157,7 +160,7 @@ async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()>
     let args: Vec<_> = args().collect();
     let parser = Parser::new(&args, &argv)?;
     let quiet = parser.flag(QUIET).is_some();
-    let profiles = Profiles::try_from_ref(&parser).await?;
+    let profiles = Groups::try_from_ref(&parser).await?;
     profiles.apply().await?;
     if !quiet {
         tabulate(&parser, &profiles).await?;

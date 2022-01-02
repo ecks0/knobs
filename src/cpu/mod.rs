@@ -23,7 +23,6 @@ impl Cpu {
         args::args()
     }
 
-    #[rustfmt::skip]
     pub(crate) fn is_empty(&self) -> bool {
         !(
             self.has_online_values() ||
@@ -31,13 +30,11 @@ impl Cpu {
         )
     }
 
-    #[rustfmt::skip]
     pub(crate) fn has_online_values(&self) -> bool {
         self.cpu.as_ref().map(|v| !v.is_empty()).unwrap_or(false) &&
         self.cpu_on.is_some()
     }
 
-    #[rustfmt::skip]
     pub(crate) fn has_policy_values(&self) -> bool {
         self.cpu.as_ref().map(|v| !v.is_empty()).unwrap_or(false) && (
             self.cpu_gov.is_some() ||

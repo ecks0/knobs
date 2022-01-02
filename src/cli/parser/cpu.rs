@@ -53,7 +53,7 @@ where
                 Ok(r)
             },
             _ => Err(Error::parse_value(format!(
-                "Could not parse string as range: {}",
+                "Could not parse string as range: {:?}",
                 s
             ))),
         }

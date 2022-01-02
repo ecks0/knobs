@@ -35,54 +35,48 @@ impl<'a> TryFromRef<Parser<'a>> for super::Rapl {
 pub(super) fn args() -> impl IntoIterator<Item = Arg> {
     vec![
         Arg {
-            name: RAPL_PACKAGE,
+            name: RAPL_PACKAGE.into(),
             long: RAPL_PACKAGE.into(),
             short: RAPL_PACKAGE_SHORT.into(),
             value_name: "INT".into(),
             help: rapl_package_help().into(),
-            help_long: None,
-            requires: None,
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: RAPL_SUBZONE,
+            name: RAPL_SUBZONE.into(),
             long: RAPL_SUBZONE.into(),
             short: RAPL_SUBZONE_SHORT.into(),
             value_name: "INT".into(),
             help: rapl_subzone_help().into(),
-            help_long: None,
-            requires: None,
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: RAPL_CONSTRAINT,
+            name: RAPL_CONSTRAINT.into(),
             long: RAPL_CONSTRAINT.into(),
             short: RAPL_CONSTRAINT_SHORT.into(),
             value_name: "INT".into(),
             help: rapl_constraint_help().into(),
-            help_long: None,
-            requires: None,
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: RAPL_LIMIT,
+            name: RAPL_LIMIT.into(),
             long: RAPL_LIMIT.into(),
             short: RAPL_LIMIT_SHORT.into(),
             value_name: "WATTS".into(),
             help: rapl_limit_help().into(),
             help_long: rapl_limit_help_long().into(),
             requires: vec![RAPL_PACKAGE, RAPL_CONSTRAINT].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: RAPL_WINDOW,
+            name: RAPL_WINDOW.into(),
             long: RAPL_WINDOW.into(),
             short: RAPL_WINDOW_SHORT.into(),
             value_name: "μS".into(),
             help: rapl_window_help().into(),
             help_long: rapl_window_help_long().into(),
             requires: vec![RAPL_PACKAGE, RAPL_CONSTRAINT].into(),
-            conflicts: None,
+            ..Default::default()
         },
     ]
 }

@@ -2,7 +2,7 @@ mod cli;
 mod cpu;
 mod i915;
 mod nvml;
-mod profile;
+mod group;
 mod rapl;
 mod util;
 
@@ -10,7 +10,7 @@ pub use clap::Error as ClapError;
 pub(crate) use cpu::Cpu;
 pub(crate) use i915::I915;
 pub(crate) use nvml::Nvml;
-pub(crate) use profile::{Profile, Profiles};
+pub(crate) use group::{Groups, Group};
 pub(crate) use rapl::Rapl;
 pub use syx::Error as SyxError;
 pub use tokio::io::Error as IoError;

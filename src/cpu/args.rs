@@ -39,74 +39,73 @@ impl<'a> TryFromRef<Parser<'a>> for super::Cpu {
 pub(super) fn args() -> impl IntoIterator<Item = Arg> {
     vec![
         Arg {
-            name: CPU,
+            name: CPU.into(),
             long: CPU.into(),
             short: CPU_SHORT.into(),
             value_name: "IDS".into(),
             help: cpu_help().into(),
             help_long: cpu_help_long().into(),
-            requires: None,
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: CPU_ON,
+            name: CPU_ON.into(),
             long: CPU_ON.into(),
             short: CPU_ON_SHORT.into(),
             value_name: "BOOL".into(),
             help: cpu_on_help().into(),
             help_long: cpu_on_help_long().into(),
             requires: vec![CPU].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: CPU_GOV,
+            name: CPU_GOV.into(),
             long: CPU_GOV.into(),
             short: CPU_GOV_SHORT.into(),
             value_name: "STR".into(),
             help: cpu_gov_help().into(),
             help_long: cpu_gov_help_long().into(),
             requires: vec![CPU].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: CPU_MIN,
+            name: CPU_MIN.into(),
             long: CPU_MIN.into(),
             short: CPU_MIN_SHORT.into(),
             value_name: "MHZ".into(),
             help: cpu_min_help().into(),
             help_long: cpu_min_help_long().into(),
             requires: vec![CPU].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: CPU_MAX,
+            name: CPU_MAX.into(),
             long: CPU_MAX.into(),
             short: CPU_MAX_SHORT.into(),
             value_name: "MHZ".into(),
             help: cpu_max_help().into(),
             help_long: cpu_max_help_long().into(),
             requires: vec![CPU].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: CPU_EPB,
+            name: CPU_EPB.into(),
             long: CPU_EPB.into(),
             short: None,
             value_name: "0..=15".into(),
             help: cpu_epb_help().into(),
             help_long: cpu_epb_help_long().into(),
             requires: vec![CPU].into(),
-            conflicts: None,
+            ..Default::default()
         },
         Arg {
-            name: CPU_EPP,
+            name: CPU_EPP.into(),
             long: CPU_EPP.into(),
             short: None,
             value_name: "STR".into(),
             help: cpu_epp_help().into(),
             help_long: cpu_epp_help_long().into(),
             requires: vec![CPU].into(),
-            conflicts: None,
+            ..Default::default()
         },
     ]
 }

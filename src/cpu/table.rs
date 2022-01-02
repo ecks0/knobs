@@ -1,4 +1,4 @@
-use futures::stream::{self, StreamExt as _, TryStreamExt as _};
+use futures::stream::{iter, StreamExt as _, TryStreamExt as _};
 use measurements::Frequency;
 use syx::cpu::Cache as Cpu;
 use syx::cpufreq::Cache as Cpufreq;
@@ -81,8 +81,7 @@ async fn governors(cpufreqs: &[Cpufreq]) -> Option<String> {
     if cpufreqs.is_empty() {
         None
     } else {
-        let i = cpufreqs.iter();
-        let mut govs: Vec<String> = stream::iter(i)
+        let mut govs: Vec<String> = iter(cpufreqs.iter())
             .then(|v| async move {
                 v.scaling_available_governors()
                     .await
@@ -119,19 +118,24 @@ async fn governors(cpufreqs: &[Cpufreq]) -> Option<String> {
 }
 
 async fn pstate_status(system: &PstateSystem) -> Option<String> {
-    system
-        .status()
-        .await
-        .ok()
-        .map(|v| format!(" intel_pstate: {}\n", v))
+    if !system.is_active().await.unwrap_or(false) {
+        // Print the status when not active so that the user
+        // knows why they're not seeing the epb/epp tables.
+        system
+            .status()
+            .await
+            .ok()
+            .map(|v| format!(" intel_pstate: {}\n", v))
+    } else {
+        None
+    }
 }
 
 async fn epb_epp(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<String> {
     if policies.is_empty() || !system.is_active().await.ok().unwrap_or(false) {
         None
     } else {
-        let i = policies.iter();
-        let mut vals: Vec<_> = stream::iter(i)
+        let mut vals: Vec<_> = iter(policies.iter())
             .then(|v| async move {
                 let epb = v
                     .energy_perf_bias()
@@ -186,8 +190,7 @@ async fn epps(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<String
     if policies.is_empty() || !system.is_active().await.ok().unwrap_or(false) {
         None
     } else {
-        let i = policies.iter();
-        let mut epps: Vec<_> = stream::iter(i)
+        let mut epps: Vec<_> = iter(policies.iter())
             .then(|v| async move {
                 v.energy_performance_available_preferences()
                     .await

@@ -1,7 +1,7 @@
 use crate::{util, Cpu, Nvml, Rapl, Result, I915};
 
 #[derive(Debug)]
-pub(crate) struct Profile {
+pub(crate) struct Group {
     pub(crate) cpu: Cpu,
     pub(crate) i915: I915,
     pub(crate) nvml: Nvml,
@@ -9,9 +9,9 @@ pub(crate) struct Profile {
 }
 
 #[derive(Debug)]
-pub(crate) struct Profiles(pub(crate) Vec<Profile>);
+pub(crate) struct Groups(pub(crate) Vec<Group>);
 
-impl Profiles {
+impl Groups {
     pub(crate) fn has_cpu_values(&self) -> bool {
         self.0.iter().any(|v| !v.cpu.is_empty())
     }

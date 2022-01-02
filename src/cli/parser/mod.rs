@@ -22,15 +22,14 @@ use crate::cli::parser::frequency::Megahertz;
 use crate::cli::parser::number::Integer;
 use crate::cli::parser::power::Watts;
 use crate::cli::parser::time::Microseconds;
-use crate::cli::Arg;
+use crate::cli::{ARGS, Arg};
 use crate::util::convert::*;
-use crate::{Cpu, Error, Nvml, Profile, Profiles, Rapl, Result, I915, NAME};
-
-const ARGS: &str = "ARGS";
+use crate::*;
 
 impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
     fn from(v: &'a Arg) -> Self {
-        let mut a = clap::Arg::with_name(v.name);
+        let name = v.name.expect("Cli argument name name is missing");
+        let mut a = clap::Arg::with_name(name);
         if let Some(long) = v.long {
             a = a.long(long);
         }
@@ -77,7 +76,6 @@ impl<'a> Parser<'a> {
             .setting(clap::AppSettings::UnifiedHelpMessage)
             .version(clap::crate_version!())
             .args(&clap_args)
-            .arg(clap::Arg::with_name(ARGS).raw(true))
             .get_matches_from_safe(argv)
             .map_err(Error::Clap)?;
         let r = Self { args, matches };
@@ -262,7 +260,7 @@ impl<'a> Parser<'a> {
 }
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for Profile {
+impl<'a> TryFromRef<Parser<'a>> for Group {
     type Error = Error;
 
     async fn try_from_ref(v: &Parser<'a>) -> Result<Self> {
@@ -277,7 +275,7 @@ impl<'a> TryFromRef<Parser<'a>> for Profile {
 }
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for Profiles {
+impl<'a> TryFromRef<Parser<'a>> for Groups {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
@@ -290,7 +288,8 @@ impl<'a> TryFromRef<Parser<'a>> for Profiles {
             args = p.strings(ARGS);
             profiles.push(p.try_ref_into().await?);
         }
-        let r = Profiles(profiles);
+        let r = Groups(profiles);
         Ok(r)
     }
 }
+
