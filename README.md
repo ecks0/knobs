@@ -56,13 +56,6 @@ ARGS:
 Knobs may be called with multiple groups of arguments. Argument groups
 are separated by `--`.
 ```
-# knobs --cpu 1.. --online true -- --cpu .. --cpu-gov schedutil
-        │                       │  │
-        └ first argument group  │  └ second argument group
-                                │
-                                └ argument group separator
-```
-```
 # knobs -P 0 -C 0 --rapl-limit 7 -- -P 0 -C 1 --rapl-limit 14
         │                        │  │
         └ first argument group   │  └ second argument group
