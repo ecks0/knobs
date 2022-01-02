@@ -96,10 +96,10 @@ overrides the default table handling behavior descibed above.
 
 Output may be silenced with `--quiet`.
 
-Examle output:
+Example output:
 ```
  CPU   Online  Governor     Cur      Min      Max      Min limit  Max limit
- ----  ------  --------     ---      ---      ---      ---------  ---------
+ ----  ------  --------     ----     ----     ----     ---------  ---------
  0     •       performance  4.6 GHz  800 MHz  4.7 GHz  800 MHz    4.7 GHz
  1     true    performance  4.6 GHz  800 MHz  4.7 GHz  800 MHz    4.7 GHz
  2     true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz    4.7 GHz
@@ -107,16 +107,28 @@ Examle output:
 
  CPU   Available governors
  ----  -------------------
- all   conservative ondemand userspace powersave performance schedutil
+ all   performance powersave
 
- intel_pstate: passive
+ CPU   EP bias  EP preference
+ ----  -------  -------------
+ all   6        balance_performance
+
+ CPU   Available EP preferences
+ ----  ------------------------
+ all   default performance balance_performance balance_power power
 
  RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
  ----  ---------  --------  ---------  --------     ---------  -----
- 0     package-0  95 W      131 W      27983872 μs  2440 μs    6.757 W
- 0:0   dram       0 W       •          976 μs       •          1.348 W
+ 0     package-0  28 W      35 W       27983872 us  2440 us    3.8 W
+ 0:0   core       0 W       •          976 us       •          1.4 W
+ 0:1   uncore     0 W       •          976 us       •          27.5 mW
+ 1     psys       0 W       0 W        27983872 us  976 us     98.9 mW
+
+ DRM   Driver  Actual   Req'd    Min      Max      Boost    Min lim  Max lim
+ ----  ------  ------   -----    ----     ----     -----    -------  -------
+ 0     i915    100 MHz  300 MHz  100 MHz  1.4 GHz  1.4 GHz  100 MHz  1.4 GHz
 
  DRM   Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
  ----  ------  -------  -------  ---------  ---------  -------  -------
- 0     nvidia  300 MHz  2.2 GHz  12 W       260 W      100 W    325 W
-```
+ 1     nvidia  300 MHz  2.2 GHz  12 W       260 W      100 W    325 W
+ ```

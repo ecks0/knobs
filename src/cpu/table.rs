@@ -19,9 +19,9 @@ async fn cpu_cpufreq(cpus: &[Cpu], cpufreqs: &[Cpufreq]) -> Option<String> {
             "CPU ",
             "Online",
             "Governor",
-            "Cur",
-            "Min",
-            "Max",
+            "Cur ",
+            "Min ",
+            "Max ",
             "Min limit",
             "Max limit",
         ]);
