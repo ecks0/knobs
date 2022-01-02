@@ -1,2 +1,3 @@
+pub(crate) mod convert;
 pub(crate) mod cpu;
-pub(crate) mod sysfs;
+pub(crate) mod format;

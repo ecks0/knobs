@@ -1,49 +1,35 @@
 [package]
 name = "knobs"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 homepage = "https://github.com/ecks0/knobs"
 license = "MIT"
 authors = ["eckso <eckso@eckso.io>"]
 
-[features]
-default = []
-cli = [
-  "clap",
-  "comfy-table",
-  "dirs",
-  "env_logger",
-  "measurements",
-  "regex",
-  "serde",
-  "serde_yaml",
-  "tokio/io-std",
-  "tokio/macros",
-  "tokio/rt-multi-thread",
-]
 [dependencies]
-async-trait = "~0.1"
-clap = { version = "~2.33", optional = true }
-comfy-table = { version = "~5.0", optional = true }
-dirs = { version = "~4.0", optional = true }
-env_logger = { version = "~0.9", optional = true }
+async-trait = "0.1.52"
+clap = "~2.33"
+#clap = "~3.0"
+comfy-table = "~5.0"
+env_logger = "~0.9"
+futures = "0.3.19"
 log = "~0.4"
-measurements = { version = "~0.10", optional = true }
+measurements = "~0.10"
 nix = "~0.23"
-nvml-wrapper = { version = "~0.7", optional = true }
-regex = { version = "~1.5", optional = true }
-serde = { version = "~1.0", features = ["derive"], optional = true }
-serde_yaml = { version = "~0.8", optional = true }
+num = "0.4.0"
+regex = "~1.5"
+#syx = { git = "https://github.com/ecks0/syx", features = ["logging"] }
+syx = { path = "/home/user/src/syx", features = ["logging"] }
 thiserror = "~1.0"
 
 [dependencies.tokio]
 version = "~1.14"
 default-features = false
 features = [
-  "fs",
+  "io-std",
   "io-util",
-  "rt",
-  "parking_lot",
+  "macros",
+  "rt-multi-thread",
   "sync",
   "time",
 ]
