@@ -62,7 +62,7 @@ are separated by `--`.
                                  │
                                  └ argument group separator
 ```
-All argument groups are parsed, and device IDs verified, before values are
+All argument groups are parsed and device IDs verified before values are
 written. Any i/o error will cause an immediate exit with error status.
 
 Most values can be displayed as a non-root user, but setting values

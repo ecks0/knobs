@@ -13,15 +13,15 @@ fn uw(v: u64) -> String {
     power(Power::from_microwatts(v as f64))
 }
 
-fn us(us: u64) -> String {
-    format!("{} μs", us)
+fn us(v: u64) -> String {
+    format!("{} μs", v)
 }
 
-fn format_zone_id(id: ZoneId) -> String {
-    if let Some(subzone) = id.subzone() {
-        format!("{}:{}", id.package(), subzone)
+fn format_zone_id(v: ZoneId) -> String {
+    if let Some(subzone) = v.subzone() {
+        format!("{}:{}", v.package(), subzone)
     } else {
-        format!("{}", id.package())
+        format!("{}", v.package())
     }
 }
 

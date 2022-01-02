@@ -4,16 +4,12 @@ use syx::nvml::Values as Card;
 
 use crate::util::format::{dot, frequency, power, Table};
 
-fn mhz(mhz: u32) -> String {
-    frequency(Frequency::from_megahertz(mhz as f64))
+fn mhz(v: u32) -> String {
+    frequency(Frequency::from_megahertz(v as f64))
 }
 
-fn mw(mw: u32) -> String {
-    // Do not show decimal places for power usage.
-    let p = Power::from_milliwatts(mw as f64);
-    let p = p.as_watts().trunc();
-    let p = Power::from_watts(p);
-    power(p)
+fn mw(v: u32) -> String {
+    power(Power::from_milliwatts(v as f64))
 }
 
 pub(super) async fn tabulate() -> Option<String> {

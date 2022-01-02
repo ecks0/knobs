@@ -23,23 +23,17 @@ pub(crate) fn frequency(f: Frequency) -> String {
 }
 
 pub(crate) fn power(p: Power) -> String {
-    let uw = p.as_microwatts().trunc() as u64;
-    if uw == 0 {
+    // Format as watts to one decimal place by default. So far,
+    // I haven't seen a rapl-supporting CPU or nvidia card that
+    // can run at less than 100 milliwatt/sec.
+    if 0. == p.as_milliwatts().trunc() {
         "0 W".to_string()
     } else {
-        // Format power units to three decimal places.
-        let width = uw.to_string().len() as u64;
-        let pow = match width {
-            v if v > 18 => 15,
-            v if v > 15 => 12,
-            v if v > 12 => 9,
-            v if v > 9 => 6,
-            v if v > 6 => 3,
-            _ => 0,
-        };
-        let trunc = 10u64.pow(pow);
-        let uw = (uw / trunc) * trunc;
-        Power::from_microwatts(uw as f64).to_string()
+        let p = p.as_watts();
+        let scale = 10.;
+        let p = (p * scale).ceil()/scale;
+        let p = Power::from_watts(p);
+        p.to_string()
     }
 }
 
