@@ -17,12 +17,20 @@ fn mw(mw: u32) -> String {
 }
 
 pub(super) async fn tabulate() -> Option<String> {
-    let cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
+    let mut cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
     if cards.is_empty() {
         None
     } else {
+        cards.sort_by_key(|v| v.id());
         let mut tab = Table::new(&[
-            "Card", "Driver", "GPU cur", "GPU lim", "Power", "Limit", "Min lim", "Max lim",
+            "DRM ",
+            "Driver",
+            "GPU cur",
+            "GPU lim",
+            "Power cur",
+            "Power lim",
+            "Min lim",
+            "Max lim",
         ]);
         for card in cards {
             tab.row(&[

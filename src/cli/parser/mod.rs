@@ -26,7 +26,7 @@ use crate::cli::Arg;
 use crate::util::convert::*;
 use crate::{Cpu, Error, Nvml, Profile, Profiles, Rapl, Result, I915, NAME};
 
-const TAIL: &str = "TAIL";
+const ARGS: &str = "ARGS";
 
 impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
     fn from(v: &'a Arg) -> Self {
@@ -41,7 +41,7 @@ impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
             a = a.takes_value(true).value_name(value_name);
         }
         if let Some(help) = &v.help {
-            a = a.long(help);
+            a = a.help(help);
         }
         if let Some(help_long) = &v.help_long {
             a = a.long_help(help_long);
@@ -77,7 +77,7 @@ impl<'a> Parser<'a> {
             .setting(clap::AppSettings::UnifiedHelpMessage)
             .version(clap::crate_version!())
             .args(&clap_args)
-            .arg(clap::Arg::with_name(TAIL).raw(true))
+            .arg(clap::Arg::with_name(ARGS).raw(true))
             .get_matches_from_safe(argv)
             .map_err(Error::Clap)?;
         let r = Self { args, matches };
@@ -282,12 +282,12 @@ impl<'a> TryFromRef<Parser<'a>> for Profiles {
 
     async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
         let mut profiles = vec![];
-        let mut args = p.strings(TAIL);
+        let mut args = p.strings(ARGS);
         profiles.push(p.try_ref_into().await?);
         while let Some(mut a) = args {
             a.insert(0, NAME.to_string());
             let p = Parser::new(p.args, &a)?;
-            args = p.strings(TAIL);
+            args = p.strings(ARGS);
             profiles.push(p.try_ref_into().await?);
         }
         let r = Profiles(profiles);

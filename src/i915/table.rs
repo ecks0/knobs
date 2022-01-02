@@ -9,12 +9,13 @@ fn mhz(v: u64) -> String {
 }
 
 pub(super) async fn tabulate() -> Option<String> {
-    let cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
+    let mut cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
     if cards.is_empty() {
         None
     } else {
+        cards.sort_by_key(|v| v.id());
         let mut tab = Table::new(&[
-            "Card", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
+            "DRM ", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
         ]);
         for card in cards {
             tab.row(&[

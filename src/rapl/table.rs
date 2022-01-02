@@ -1,12 +1,16 @@
+use std::time::Duration;
+
+use futures::future::try_join_all;
 use futures::stream::TryStreamExt as _;
 use measurements::Power;
 use syx::rapl::constraint::{Values as Constraint, LONG_TERM, SHORT_TERM};
-use syx::rapl::zone::{Id as ZoneId, Values as Zone};
+use syx::rapl::zone::{self, Id as ZoneId, Values as Zone};
+use tokio::time::sleep;
 
 use crate::util::format::{dot, power, Table};
 
-fn mw(v: u64) -> String {
-    power(Power::from_milliwatts(v as f64))
+fn uw(v: u64) -> String {
+    power(Power::from_microwatts(v as f64))
 }
 
 fn us(us: u64) -> String {
@@ -29,29 +33,56 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
     }
 }
 
+async fn usage(zone: ZoneId) -> (ZoneId, Option<u64>) {
+    const SAMPLE_INTERVAL: Duration = Duration::from_millis(200);
+    const SCALE: u64 = 1000 / SAMPLE_INTERVAL.as_millis() as u64;
+
+    if let Ok(a) = zone::energy_uj(zone).await {
+        sleep(SAMPLE_INTERVAL).await;
+        if let Ok(b) = zone::energy_uj(zone).await {
+            let v = b - a;
+            let v = v * SCALE;
+            return (zone, Some(v));
+        }
+    }
+    (zone, None)
+}
+
+async fn usages(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
+    let f: Vec<_> = zones.iter().map(|v| tokio::spawn(usage(v.id()))).collect();
+    try_join_all(f)
+        .await
+        .expect("join rapl usage sampler tasks")
+}
+
 pub(super) async fn tabulate() -> Option<String> {
-    let zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
+    let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
         None
     } else {
+        zones.sort_by_key(|v| v.id());
         let mut tab = Table::new(&[
+            "RAPL",
             "Zone name",
-            "Zone",
-            "Long limit",
-            "Short limit",
-            "Long window",
-            "Short window",
+            "Long lim",
+            "Short lim",
+            "Long win",
+            "Short win",
+            "Usage",
         ]);
+        let usages = usages(&zones).await;
         for zone in zones {
             let (long_lim, long_win) = limit_window(&zone, LONG_TERM).await;
             let (short_lim, short_win) = limit_window(&zone, SHORT_TERM).await;
+            let usage = usages.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
             tab.row(&[
-                zone.name().await.ok().map(String::from).unwrap_or_else(dot),
                 format_zone_id(zone.id()),
-                long_lim.map(mw).unwrap_or_else(dot),
-                short_lim.map(mw).unwrap_or_else(dot),
+                zone.name().await.ok().map(String::from).unwrap_or_else(dot),
+                long_lim.map(uw).unwrap_or_else(dot),
+                short_lim.map(uw).unwrap_or_else(dot),
                 long_win.map(us).unwrap_or_else(dot),
                 short_win.map(us).unwrap_or_else(dot),
+                usage.map(uw).unwrap_or_else(dot),
             ]);
         }
         Some(tab.to_string())

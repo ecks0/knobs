@@ -12,6 +12,22 @@ pub(crate) struct Profile {
 pub(crate) struct Profiles(pub(crate) Vec<Profile>);
 
 impl Profiles {
+    pub(crate) fn has_cpu_values(&self) -> bool {
+        self.0.iter().any(|v| !v.cpu.is_empty())
+    }
+
+    pub(crate) fn has_i915_values(&self) -> bool {
+        self.0.iter().any(|v| !v.i915.is_empty())
+    }
+
+    pub(crate) fn has_nvml_values(&self) -> bool {
+        self.0.iter().any(|v| !v.nvml.is_empty())
+    }
+
+    pub(crate) fn has_rapl_values(&self) -> bool {
+        self.0.iter().any(|v| !v.rapl.is_empty())
+    }
+
     fn cpu_policy_ids(&self) -> Vec<u64> {
         let mut r = self
             .0
