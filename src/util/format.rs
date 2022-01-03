@@ -23,17 +23,12 @@ pub(crate) fn frequency(f: Frequency) -> String {
 }
 
 pub(crate) fn power(p: Power) -> String {
-    // Format power as watts to one decimal place by default.
-    // So far, I haven't seen a rapl-capable CPU or a nvidia
-    // card that can run at less than 100 milliwatt/sec.
-    if 0. == p.as_milliwatts().trunc() {
+    let mw = p.as_milliwatts().trunc();
+    if 0. == mw {
         "0 W".to_string()
     } else {
-        let p = p.as_watts();
-        let scale = 10.;
-        let p = (p * scale).ceil().trunc() / scale;
-        let p = Power::from_watts(p);
-        p.to_string()
+        let p = Power::from_milliwatts(mw);
+        if mw % 1000. == 0. { format!("{:.0}", p) } else { format!("{:.1}", p) }
     }
 }
 
