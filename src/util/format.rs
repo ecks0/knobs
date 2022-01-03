@@ -31,7 +31,7 @@ pub(crate) fn power(p: Power) -> String {
     } else {
         let p = p.as_watts();
         let scale = 10.;
-        let p = (p * scale).ceil() / scale;
+        let p = (p * scale).ceil().trunc() / scale;
         let p = Power::from_watts(p);
         p.to_string()
     }
