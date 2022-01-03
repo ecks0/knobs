@@ -37,7 +37,7 @@ pub(super) fn args() -> Vec<Arg> {
         Arg {
             name: NVML_GPU_MIN.into(),
             long: NVML_GPU_MIN.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: nvml_gpu_min_help().into(),
             help_long: nvml_gpu_min_help_long().into(),
             requires: vec![NVML].into(),
@@ -46,7 +46,7 @@ pub(super) fn args() -> Vec<Arg> {
         Arg {
             name: NVML_GPU_MAX.into(),
             long: NVML_GPU_MAX.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: nvml_gpu_max_help().into(),
             help_long: nvml_gpu_max_help_long().into(),
             requires: vec![NVML].into(),
@@ -55,7 +55,7 @@ pub(super) fn args() -> Vec<Arg> {
         Arg {
             name: NVML_POWER.into(),
             long: NVML_POWER.into(),
-            value_name: "WATTS".into(),
+            value_name: "FLOAT".into(),
             help: nvml_power_help().into(),
             help_long: nvml_power_help_long().into(),
             requires: vec![NVML].into(),
@@ -68,11 +68,13 @@ fn nvml_help() -> String {
     "Target nvml drm ids or bus ids".to_string()
 }
 
+#[rustfmt::skip]
 fn nvml_help_long() -> String {
-    "Target nvml drm ids or bus ids, comma-delimited. Bus id syntax e.g. pci:0000:00:02.0"
-        .to_string()
-}
+"Target drm integer or bus ids, comma-delimited
+Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
 
+".to_string()
+}
 fn nvml_gpu_min_help() -> String {
     "Set nvml min gpu freq in megahertz".to_string()
 }

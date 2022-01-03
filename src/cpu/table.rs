@@ -44,7 +44,7 @@ async fn cpu_cpufreq(cpus: &[Cpu], cpufreqs: &[Cpufreq]) -> Option<String> {
             }
             tab.row(&row);
         }
-        Some(tab.to_string())
+        Some(tab.into())
     }
 }
 
@@ -79,7 +79,7 @@ async fn governors(cpufreqs: &[Cpufreq]) -> Option<String> {
                     ]);
                 }
             }
-            Some(tab.to_string())
+            Some(tab.into())
         }
     }
 }
@@ -136,7 +136,7 @@ async fn epb_epp(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<Str
                     ]);
                 }
             }
-            Some(tab.to_string())
+            Some(tab.into())
         }
     }
 }
@@ -176,7 +176,7 @@ async fn epps(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<String
                     ]);
                 }
             }
-            Some(tab.to_string())
+            Some(tab.into())
         }
     }
 }

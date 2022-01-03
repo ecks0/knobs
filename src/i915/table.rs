@@ -30,6 +30,6 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.rp0_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
             ]);
         }
-        Some(tab.to_string())
+        Some(tab.into())
     }
 }

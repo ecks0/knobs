@@ -79,3 +79,9 @@ impl<'a> Display for Table<'a> {
         writeln!(f, "{}", tab.to_string())
     }
 }
+
+impl<'a> From<Table<'a>> for String {
+    fn from(v: Table<'a>) -> Self {
+        v.to_string()
+    }
+}

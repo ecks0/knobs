@@ -40,6 +40,6 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.power_max_limit().await.ok().map(mw).unwrap_or_else(dot),
             ])
         }
-        Some(tab.to_string())
+        Some(tab.into())
     }
 }

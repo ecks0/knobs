@@ -60,7 +60,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
             name: RAPL_LIMIT.into(),
             long: RAPL_LIMIT.into(),
             short: RAPL_LIMIT_SHORT.into(),
-            value_name: "WATTS".into(),
+            value_name: "FLOAT".into(),
             help: rapl_limit_help().into(),
             help_long: rapl_limit_help_long().into(),
             requires: vec![RAPL_PACKAGE, RAPL_CONSTRAINT].into(),
@@ -70,7 +70,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
             name: RAPL_WINDOW.into(),
             long: RAPL_WINDOW.into(),
             short: RAPL_WINDOW_SHORT.into(),
-            value_name: "μS".into(),
+            value_name: "INT".into(),
             help: rapl_window_help().into(),
             help_long: rapl_window_help_long().into(),
             requires: vec![RAPL_PACKAGE, RAPL_CONSTRAINT].into(),
@@ -95,20 +95,24 @@ pub(crate) fn rapl_limit_help() -> String {
     "Set rapl power limit in watts".to_string()
 }
 
+#[rustfmt::skip]
 pub(crate) fn rapl_limit_help_long() -> String {
     format!(
-        "Set rapl power limit in watts per --{}/{}/{}",
-        RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT
-    )
+"Set rapl power limit in watts per
+--{}/{}/{}
+
+", RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT)
 }
 
 pub(crate) fn rapl_window_help() -> String {
     "Set rapl power window in microseconds".to_string()
 }
 
+#[rustfmt::skip]
 pub(crate) fn rapl_window_help_long() -> String {
     format!(
-        "Set rapl power window in microseconds per --{}/{}/{}",
-        RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT
-    )
+"Set rapl power window in microseconds per
+--{}/{}/{}
+
+", RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT)
 }

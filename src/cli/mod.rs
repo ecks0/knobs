@@ -38,28 +38,24 @@ fn args_before() -> Vec<Arg> {
             long: QUIET.into(),
             short: QUIET_SHORT.into(),
             help: "Do not print tables".to_string().into(),
-            conflicts: vec![SHOW_CPU, SHOW_RAPL, SHOW_DRM].into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_CPU.into(),
             long: SHOW_CPU.into(),
             help: "Show cpu tables".to_string().into(),
-            conflicts: vec![QUIET].into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_RAPL.into(),
             long: SHOW_RAPL.into(),
             help: "Show rapl table".to_string().into(),
-            conflicts: vec![QUIET].into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_DRM.into(),
             long: SHOW_DRM.into(),
             help: "Show drm tables".to_string().into(),
-            conflicts: vec![QUIET].into(),
             ..Default::default()
         },
     ]
@@ -68,6 +64,8 @@ fn args_before() -> Vec<Arg> {
 fn args_after() -> Vec<Arg> {
     vec![Arg {
         name: ARGS.into(),
+        help: "Additional argument groups".to_string().into(),
+        help_long: "Additional argument groups".to_string().into(),
         raw: true.into(),
         ..Default::default()
     }]

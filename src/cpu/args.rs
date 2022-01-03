@@ -71,7 +71,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
             name: CPU_MIN.into(),
             long: CPU_MIN.into(),
             short: CPU_MIN_SHORT.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: cpu_min_help().into(),
             help_long: cpu_min_help_long().into(),
             requires: vec![CPU].into(),
@@ -81,7 +81,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
             name: CPU_MAX.into(),
             long: CPU_MAX.into(),
             short: CPU_MAX_SHORT.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: cpu_max_help().into(),
             help_long: cpu_max_help_long().into(),
             requires: vec![CPU].into(),
@@ -114,21 +114,26 @@ fn cpu_help() -> String {
     "Target cpu ids".to_string()
 }
 
+#[rustfmt::skip]
 fn cpu_help_long() -> String {
-    "Target cpu ids as a comma-delimited list of integers and/or inclusive ranges. Range syntax: \
-     X..Y X.. ..Y .."
-        .to_string()
+"Target cpu ids as comma-delimited list of
+integers and/or inclusive ranges
+Range syntax: X..Y X.. ..Y ..
+
+".to_string()
 }
 
 fn cpu_on_help() -> String {
     "Set cpu online or offline".to_string()
 }
 
+#[rustfmt::skip]
 fn cpu_on_help_long() -> String {
     format!(
-        "Set cpu online or offline per -{}/--{}. Bool syntax: 0 1 true false",
-        CPU_SHORT, CPU
-    )
+"Set cpu online or offline per -{}/--{}
+Bool syntax: 0 1 true false
+
+", CPU_SHORT, CPU)
 }
 
 fn cpu_gov_help() -> String {
@@ -136,7 +141,7 @@ fn cpu_gov_help() -> String {
 }
 
 fn cpu_gov_help_long() -> String {
-    format!("Set cpu governor per per -{}/--{}", CPU_SHORT, CPU)
+    format!("Set cpu governor per -{}/--{}", CPU_SHORT, CPU)
 }
 
 fn cpu_min_help() -> String {
@@ -144,10 +149,7 @@ fn cpu_min_help() -> String {
 }
 
 fn cpu_min_help_long() -> String {
-    format!(
-        "Set cpu min freq in megahertz per per -{}/--{}",
-        CPU_SHORT, CPU
-    )
+    format!("Set cpu min freq in megahertz per -{}/--{}", CPU_SHORT, CPU)
 }
 
 fn cpu_max_help() -> String {
@@ -155,21 +157,20 @@ fn cpu_max_help() -> String {
 }
 
 fn cpu_max_help_long() -> String {
-    format!(
-        "Set cpu max freq in megahertz per per -{}/--{}",
-        CPU_SHORT, CPU
-    )
+    format!("Set cpu max freq in megahertz per -{}/--{}", CPU_SHORT, CPU)
 }
 
 fn cpu_epb_help() -> String {
     "Set cpu epb".to_string()
 }
 
+#[rustfmt::skip]
 fn cpu_epb_help_long() -> String {
     format!(
-        "Set cpu pstate energy/performance bias per -{}/--{}. Expects an integer in 0..=15",
-        CPU_SHORT, CPU
-    )
+"Set cpu pstate energy/performance bias per -{}/--{}.
+Expects an integer within 0..=15
+
+", CPU_SHORT, CPU)
 }
 
 fn cpu_epp_help() -> String {
@@ -178,7 +179,7 @@ fn cpu_epp_help() -> String {
 
 fn cpu_epp_help_long() -> String {
     format!(
-        "Set cpu pstate energy/performance preference per -{}/--{}. e.g. an integer in 0..=15",
+        "Set cpu pstate energy/performance preference per -{}/--{}",
         CPU_SHORT, CPU
     )
 }

@@ -37,7 +37,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
         Arg {
             name: I915_MIN.into(),
             long: I915_MIN.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: i915_min_help().into(),
             help_long: i915_min_help_long().into(),
             requires: vec![I915].into(),
@@ -46,7 +46,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
         Arg {
             name: I915_MAX.into(),
             long: I915_MAX.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: i915_max_help().into(),
             help_long: i915_max_help_long().into(),
             requires: vec![I915].into(),
@@ -55,7 +55,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
         Arg {
             name: I915_BOOST.into(),
             long: I915_BOOST.into(),
-            value_name: "MHZ".into(),
+            value_name: "INT".into(),
             help: i915_boost_help().into(),
             help_long: i915_boost_help_long().into(),
             requires: vec![I915].into(),
@@ -68,9 +68,12 @@ fn i915_help() -> String {
     "Target i915 drm ids or bus ids".to_string()
 }
 
+#[rustfmt::skip]
 fn i915_help_long() -> String {
-    "Target i915 drm ids or bus ids, comma-delimited. Bus id syntax e.g. pci:0000:00:02.0"
-        .to_string()
+"Target drm integer or bus ids, comma-delimited
+Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
+
+".to_string()
 }
 
 fn i915_min_help() -> String {

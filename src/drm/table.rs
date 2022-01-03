@@ -19,6 +19,6 @@ pub(super) async fn tabulate() -> Option<String> {
                 bus_id.unwrap_or_else(dot),
             ]);
         }
-        Some(tab.to_string())
+        Some(tab.into())
     }
 }
