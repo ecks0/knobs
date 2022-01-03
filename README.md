@@ -18,37 +18,37 @@ Short help:
 knobs 0.5.0
 
 USAGE:
-    knobs [OPTIONS] [ARGS]
+    knobs [OPTIONS] [-- <ARGS>...]
 
 OPTIONS:
     -q, --quiet                    Do not print tables
-        --show-cpu                 Show cpu tables
-        --show-rapl                Show rapl table
-        --show-drm                 Show drm tables
+        --show-cpu                 Print cpu tables
+        --show-rapl                Print rapl table
+        --show-drm                 Print drm tables
     -c, --cpu <IDS>                Target cpu ids
     -o, --cpu-on <BOOL>            Set cpu online or offline
     -g, --cpu-gov <STR>            Set cpu governor
-    -n, --cpu-min <MHZ>            Set cpu min freq in megahertz
-    -x, --cpu-max <MHZ>            Set cpu max freq in megahertz
+    -n, --cpu-min <INT>            Set cpu min freq in megahertz
+    -x, --cpu-max <INT>            Set cpu max freq in megahertz
         --cpu-epb <0..=15>         Set cpu epb
         --cpu-epp <STR>            Set cpu epp
     -P, --rapl-package <INT>       Target rapl package
     -S, --rapl-subzone <INT>       Target rapl subzone
     -C, --rapl-constraint <INT>    Target rapl constraint
-    -L, --rapl-limit <WATTS>       Set rapl power limit in watts
-    -W, --rapl-window <μS>         Set rapl power window in microseconds
-        --i915 <IDS>               Target i915 drm ids or bus ids
-        --i915-min <MHZ>           Set i915 min freq in megahertz
-        --i915-max <MHZ>           Set i915 max freq in megahertz
-        --i915-boost <MHZ>         Set i915 boost freq in megahertz
-        --nvml <IDS>               Target nvml drm ids or bus ids
-        --nvml-gpu-min <MHZ>       Set nvml min gpu freq in megahertz
-        --nvml-gpu-max <MHZ>       Set nvml max gpu freq in megahertz
-        --nvml-power <WATTS>       Set nvml device power limit in watts
+    -L, --rapl-limit <FLOAT>       Set rapl power limit in watts
+    -W, --rapl-window <INT>        Set rapl power window in microseconds
+        --i915 <IDS>               Target i915 drm integer or bus ids
+        --i915-min <INT>           Set i915 min freq in megahertz
+        --i915-max <INT>           Set i915 max freq in megahertz
+        --i915-boost <INT>         Set i915 boost freq in megahertz
+        --nvml <IDS>               Target nvml drm integer or bus ids
+        --nvml-gpu-min <INT>       Set nvml min gpu freq in megahertz
+        --nvml-gpu-max <INT>       Set nvml max gpu freq in megahertz
+        --nvml-power <FLOAT>       Set nvml device power limit in watts
     -h, --help                     Prints help information
 
 ARGS:
-    <ARGS>
+    <ARGS>...    Additional argument groups
 ```
 
 ## Running

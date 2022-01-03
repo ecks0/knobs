@@ -65,12 +65,12 @@ pub(super) fn args() -> Vec<Arg> {
 }
 
 fn nvml_help() -> String {
-    "Target nvml drm ids or bus ids".to_string()
+    "Target nvml drm integer or bus ids".to_string()
 }
 
 #[rustfmt::skip]
 fn nvml_help_long() -> String {
-"Target drm integer or bus ids, comma-delimited
+"Target nvml drm integer or bus ids, comma-delimited
 Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
 
 ".to_string()

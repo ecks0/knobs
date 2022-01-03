@@ -65,12 +65,12 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
 }
 
 fn i915_help() -> String {
-    "Target i915 drm ids or bus ids".to_string()
+    "Target i915 drm integer or bus ids".to_string()
 }
 
 #[rustfmt::skip]
 fn i915_help_long() -> String {
-"Target drm integer or bus ids, comma-delimited
+"Target i915 drm integer or bus ids, comma-delimited
 Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
 
 ".to_string()

@@ -43,19 +43,19 @@ fn args_before() -> Vec<Arg> {
         Arg {
             name: SHOW_CPU.into(),
             long: SHOW_CPU.into(),
-            help: "Show cpu tables".to_string().into(),
+            help: "Print cpu tables".to_string().into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_RAPL.into(),
             long: SHOW_RAPL.into(),
-            help: "Show rapl table".to_string().into(),
+            help: "Print rapl table".to_string().into(),
             ..Default::default()
         },
         Arg {
             name: SHOW_DRM.into(),
             long: SHOW_DRM.into(),
-            help: "Show drm tables".to_string().into(),
+            help: "Print drm tables".to_string().into(),
             ..Default::default()
         },
     ]
