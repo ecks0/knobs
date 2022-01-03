@@ -16,14 +16,7 @@ async fn cpu_cpufreq(cpus: &[Cpu], cpufreqs: &[Cpufreq]) -> Option<String> {
         None
     } else {
         let mut tab = Table::new(&[
-            "CPU",
-            "Online",
-            "Governor",
-            "Cur",
-            "Min",
-            "Max",
-            "Min limit",
-            "Max limit",
+            "CPU", "Online", "Governor", "Cur", "Min", "Max", "Min lim", "Max lim",
         ]);
         for cpu in cpus {
             let mut row = vec![
