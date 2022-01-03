@@ -19,7 +19,7 @@ pub(super) async fn tabulate() -> Option<String> {
     } else {
         cards.sort_by_key(|v| v.id());
         let mut tab = Table::new(&[
-            "DRM ",
+            "DRM",
             "Driver",
             "GPU cur",
             "GPU lim",

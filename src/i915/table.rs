@@ -15,7 +15,7 @@ pub(super) async fn tabulate() -> Option<String> {
     } else {
         cards.sort_by_key(|v| v.id());
         let mut tab = Table::new(&[
-            "DRM ", "Driver", "Actual", "Req'd", "Min ", "Max ", "Boost", "Min lim", "Max lim",
+            "DRM", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
         ]);
         for card in cards {
             tab.row(&[

@@ -16,12 +16,12 @@ async fn cpu_cpufreq(cpus: &[Cpu], cpufreqs: &[Cpufreq]) -> Option<String> {
         None
     } else {
         let mut tab = Table::new(&[
-            "CPU ",
+            "CPU",
             "Online",
             "Governor",
-            "Cur ",
-            "Min ",
-            "Max ",
+            "Cur",
+            "Min",
+            "Max",
             "Min limit",
             "Max limit",
         ]);
@@ -63,7 +63,7 @@ async fn governors(cpufreqs: &[Cpufreq]) -> Option<String> {
         if govs.is_empty() || (govs.len() == 1 && govs[0] == DOT) {
             None
         } else {
-            let mut tab = Table::new(&["CPU ", "Available governors"]);
+            let mut tab = Table::new(&["CPU", "Available governors"]);
             if govs.len() == 1 {
                 tab.row(&["all", govs[0].as_str()]);
             } else {
@@ -117,7 +117,7 @@ async fn epb_epp(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<Str
         if vals.is_empty() || (vals.len() == 1 && vals[0] == (dot(), dot())) {
             None
         } else {
-            let mut tab = Table::new(&["CPU ", "EP bias", "EP preference"]);
+            let mut tab = Table::new(&["CPU", "EP bias", "EP preference"]);
             if vals.len() == 1 {
                 let val = vals.remove(0);
                 tab.row(&["all", &val.0, &val.1]);
@@ -160,7 +160,7 @@ async fn epps(system: &PstateSystem, policies: &[PstatePolicy]) -> Option<String
         if epps.is_empty() || (epps.len() == 1 && epps[0] == DOT) {
             None
         } else {
-            let mut tab = Table::new(&["CPU ", "Available EP preferences"]);
+            let mut tab = Table::new(&["CPU", "Available EP preferences"]);
             if epps.len() == 1 {
                 tab.row(&["all", epps[0].as_str()]);
             } else {

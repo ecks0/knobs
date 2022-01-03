@@ -45,7 +45,7 @@ impl Table {
         let mut tab = ct::Table::new();
         tab.load_preset(ct::presets::NOTHING);
         tab.set_header(header);
-        tab.add_row(header.iter().map(|h| "-".repeat(h.len())).collect::<Vec<String>>());
+        tab.add_row(header.iter().map(|h| "─".repeat(h.len())).collect::<Vec<String>>());
         Self(tab)
     }
 
