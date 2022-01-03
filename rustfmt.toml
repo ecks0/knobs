@@ -12,6 +12,6 @@ normalize_doc_attributes = true
 overflow_delimited_expr = true
 reorder_impl_items = true
 reorder_imports = true
-single_line_if_else_max_width = 99
+single_line_if_else_max_width = 80
 use_try_shorthand = true
 wrap_comments = true

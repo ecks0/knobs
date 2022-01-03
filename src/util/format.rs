@@ -26,9 +26,10 @@ pub(crate) fn power(p: Power) -> String {
     let mw = p.as_milliwatts().trunc();
     if 0. == mw {
         "0 W".to_string()
+    } else if mw < 1000. || mw % 1000. == 0. {
+        format!("{:.0}", p)
     } else {
-        let p = Power::from_milliwatts(mw);
-        if mw % 1000. == 0. { format!("{:.0}", p) } else { format!("{:.1}", p) }
+        format!("{:.1}", p)
     }
 }
 
