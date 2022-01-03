@@ -14,10 +14,8 @@ pub(crate) fn frequency(f: Frequency) -> String {
     if h == 0 {
         "0 Hz".to_string()
     } else if h < 10u64.pow(9) {
-        // Format units less than gigahertz without decimals.
         format!("{:.0}", f)
     } else {
-        // Format gigahertz and above to one decimal place.
         format!("{:.1}", f)
     }
 }

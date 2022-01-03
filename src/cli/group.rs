@@ -5,11 +5,11 @@ use crate::util::convert::*;
 use crate::{util, Cpu, Error, Nvml, Rapl, Result, I915};
 
 #[derive(Debug)]
-pub(super) struct Group {
-    pub(super) cpu: Cpu,
-    pub(super) i915: I915,
-    pub(super) nvml: Nvml,
-    pub(super) rapl: Rapl,
+struct Group {
+    cpu: Cpu,
+    i915: I915,
+    nvml: Nvml,
+    rapl: Rapl,
 }
 
 #[async_trait]
@@ -28,7 +28,7 @@ impl<'a> TryFromRef<Parser<'a>> for Group {
 }
 
 #[derive(Debug)]
-pub(super) struct Groups(pub(super) Vec<Group>);
+pub(super) struct Groups(Vec<Group>);
 
 impl Groups {
     pub(super) fn has_cpu_values(&self) -> bool {
@@ -95,16 +95,16 @@ impl<'a> TryFromRef<Parser<'a>> for Groups {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
-        let mut profiles = vec![];
+        let mut groups = vec![];
         let mut args = p.strings(ARGS);
-        profiles.push(p.try_ref_into().await?);
+        groups.push(p.try_ref_into().await?);
         while let Some(mut a) = args {
             a.insert(0, NAME.to_string());
             let p = Parser::new(p.args, &a)?;
             args = p.strings(ARGS);
-            profiles.push(p.try_ref_into().await?);
+            groups.push(p.try_ref_into().await?);
         }
-        let r = Groups(profiles);
+        let r = Groups(groups);
         Ok(r)
     }
 }

@@ -65,7 +65,7 @@ fn args_after() -> Vec<Arg> {
     vec![Arg {
         name: ARGS.into(),
         help: "Additional argument groups".to_string().into(),
-        help_long: "Additional argument groups".to_string().into(),
+        help_long: "Additional argument groups delimited by --".to_string().into(),
         raw: true.into(),
         ..Default::default()
     }]
@@ -115,25 +115,15 @@ async fn tabulate(parser: &Parser<'_>, groups: &Groups) -> Result<()> {
     let has_vals = has_cpu_vals || has_rapl_vals || has_drm_vals;
     let mut tables = vec![];
     if (!has_vals && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
-        if let Some(v) = Cpu::tabulate().await {
-            tables.push(v);
-        }
+        tables.extend(Cpu::tabulate().await);
     }
     if (!has_vals && !has_show_flags) || (has_rapl_vals && !has_show_flags) || show_rapl {
-        if let Some(v) = Rapl::tabulate().await {
-            tables.push(v);
-        }
+        tables.extend(Rapl::tabulate().await);
     }
     if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
-        if let Some(v) = Drm::tabulate().await {
-            tables.push(v);
-        }
-        if let Some(v) = I915::tabulate().await {
-            tables.push(v);
-        }
-        if let Some(v) = Nvml::tabulate().await {
-            tables.push(v);
-        }
+        tables.extend(Drm::tabulate().await);
+        tables.extend(I915::tabulate().await);
+        tables.extend(Nvml::tabulate().await);
     }
     if tables.is_empty() {
         eprint("No supported devices were found", true).await;
@@ -155,6 +145,7 @@ pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result
     }
     Ok(())
 }
+
 pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
     if let Err(e) = try_run_with_args(argv).await {
         match e {
