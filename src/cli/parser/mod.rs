@@ -21,14 +21,14 @@ use crate::cli::parser::frequency::Megahertz;
 use crate::cli::parser::number::Integer;
 use crate::cli::parser::power::Watts;
 use crate::cli::parser::time::Microseconds;
-use crate::cli::{Arg, NAME};
+use crate::cli::{Arg, ARGV0};
 use crate::util::convert::*;
 use crate::*;
 
-impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
+impl<'a> From<&'a Arg> for clap::Arg<'a> {
     fn from(v: &'a Arg) -> Self {
         let name = v.name.expect("Cli argument name name is missing");
-        let mut a = clap::Arg::with_name(name);
+        let mut a = clap::Arg::new(name);
         if let Some(long) = v.long {
             a = a.long(long);
         }
@@ -62,26 +62,24 @@ impl<'a> From<&'a Arg> for clap::Arg<'a, 'a> {
 }
 
 #[derive(Debug)]
-pub(crate) struct Parser<'a> {
-    pub(super) args: &'a [Arg],
-    pub(super) matches: clap::ArgMatches<'a>,
+pub(crate) struct Parser {
+    pub(super) matches: clap::ArgMatches,
 }
 
-impl<'a> Parser<'a> {
-    pub(super) fn new(args: &'a [Arg], argv: &[String]) -> Result<Self> {
+impl Parser {
+    pub(super) fn new(args: &[Arg], argv: &[&str]) -> Result<Self> {
         let clap_args: Vec<clap::Arg> = args.iter().map(From::from).collect();
-        let matches = clap::App::new(NAME)
-            .setting(clap::AppSettings::ColorNever)
+        let matches = clap::App::new(ARGV0)
+            .color(clap::ColorChoice::Never)
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .setting(clap::AppSettings::DisableHelpSubcommand)
-            .setting(clap::AppSettings::DisableVersion)
+            .setting(clap::AppSettings::DisableVersionFlag)
             .setting(clap::AppSettings::TrailingVarArg)
-            .setting(clap::AppSettings::UnifiedHelpMessage)
             .version(clap::crate_version!())
             .args(&clap_args)
-            .get_matches_from_safe(argv)
+            .try_get_matches_from(argv)
             .map_err(Error::Clap)?;
-        let r = Self { args, matches };
+        let r = Self { matches };
         Ok(r)
     }
 
@@ -227,16 +225,8 @@ impl<'a> Parser<'a> {
         self.matches.value_of(name)
     }
 
-    pub(crate) fn strs(&self, name: &str) -> Option<Vec<&str>> {
-        self.matches.values_of(name).map(|v| v.into_iter().collect())
-    }
-
     pub(crate) fn string(&self, name: &str) -> Option<String> {
         self.str(name).map(String::from)
-    }
-
-    pub(crate) fn strings(&self, name: &str) -> Option<Vec<String>> {
-        self.strs(name).map(|v| v.into_iter().map(String::from).collect())
     }
 
     pub(crate) fn watts(&self, name: &str) -> Result<Option<Power>> {

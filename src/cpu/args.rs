@@ -12,17 +12,17 @@ const CPU_MAX: &str = "cpu-max";
 const CPU_EPB: &str = "cpu-epb";
 const CPU_EPP: &str = "cpu-epp";
 
-const CPU_SHORT: &str = "c";
-const CPU_ON_SHORT: &str = "o";
-const CPU_GOV_SHORT: &str = "g";
-const CPU_MIN_SHORT: &str = "n";
-const CPU_MAX_SHORT: &str = "x";
+const CPU_SHORT: char = 'c';
+const CPU_ON_SHORT: char = 'o';
+const CPU_GOV_SHORT: char = 'g';
+const CPU_MIN_SHORT: char = 'n';
+const CPU_MAX_SHORT: char = 'x';
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for super::Cpu {
+impl TryFromRef<Parser> for super::Cpu {
     type Error = Error;
 
-    async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
+    async fn try_from_ref(p: &Parser) -> Result<Self> {
         let r = Self {
             cpu: p.cpu_ids(CPU).await?,
             cpu_on: p.bool(CPU_ON)?,
@@ -116,8 +116,8 @@ fn cpu_help() -> String {
 
 #[rustfmt::skip]
 fn cpu_help_long() -> String {
-"Target cpu ids as comma-delimited list of
-integers and/or inclusive ranges
+"Target cpu ids as comma-delimited list of integers and/or
+inclusive ranges
 Range syntax: X..Y X.. ..Y ..
 
 ".to_string()
@@ -131,9 +131,8 @@ fn cpu_on_help() -> String {
 fn cpu_on_help_long() -> String {
     format!(
 "Set cpu online or offline per -{}/--{}
-Bool syntax: 0 1 true false
-
-", CPU_SHORT, CPU)
+Bool syntax: 0 1 true false",
+CPU_SHORT, CPU)
 }
 
 fn cpu_gov_help() -> String {
@@ -169,7 +168,6 @@ fn cpu_epb_help_long() -> String {
     format!(
 "Set cpu pstate energy/performance bias per -{}/--{}.
 Expects an integer within 0..=15
-
 ", CPU_SHORT, CPU)
 }
 

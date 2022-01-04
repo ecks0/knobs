@@ -53,6 +53,11 @@ impl Error {
     }
 
     fn parse_group(error: Self, group: usize) -> Self {
+        if let Error::Clap(inner) = &error {
+            if inner.kind == clap::ErrorKind::DisplayHelp {
+                return error;
+            }
+        }
         let error = error.to_string();
         Self::ParseGroup { error, group }
     }

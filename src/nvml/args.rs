@@ -10,10 +10,10 @@ const NVML_GPU_MAX: &str = "nvml-gpu-max";
 const NVML_POWER: &str = "nvml-power";
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for super::Nvml {
+impl TryFromRef<Parser> for super::Nvml {
     type Error = Error;
 
-    async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
+    async fn try_from_ref(p: &Parser) -> Result<Self> {
         let r = Self {
             nvml: p.drm_ids::<NvmlDriver>(NVML).await?,
             nvml_gpu_min: p.megahertz(NVML_GPU_MIN)?,
@@ -65,12 +65,12 @@ pub(super) fn args() -> Vec<Arg> {
 }
 
 fn nvml_help() -> String {
-    "Target nvml drm integer or bus ids".to_string()
+    "Target nvml drm card indexes or bus ids".to_string()
 }
 
 #[rustfmt::skip]
 fn nvml_help_long() -> String {
-"Target nvml drm integer or bus ids, comma-delimited
+"Target nvml drm card indexes or bus ids, comma-delimited
 Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
 
 ".to_string()

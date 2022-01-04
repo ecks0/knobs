@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 
-use crate::cli::{Parser, ARGS, NAME};
+use crate::cli::Parser;
 use crate::util::convert::*;
 use crate::{util, Cpu, Error, Nvml, Rapl, Result, I915};
 
 #[derive(Debug)]
-struct Group {
+pub(super) struct Group {
     cpu: Cpu,
     i915: I915,
     nvml: Nvml,
@@ -13,10 +13,10 @@ struct Group {
 }
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for Group {
+impl TryFromRef<Parser> for Group {
     type Error = Error;
 
-    async fn try_from_ref(v: &Parser<'a>) -> Result<Self> {
+    async fn try_from_ref(v: &Parser) -> Result<Self> {
         let r = Self {
             cpu: Cpu::try_from_ref(v).await?,
             i915: I915::try_from_ref(v).await?,
@@ -98,33 +98,9 @@ impl Groups {
     }
 }
 
-#[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for Groups {
-    type Error = Error;
-
-    async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
-        let mut i = 1;
-        let mut groups = vec![];
-        let mut next = p.strings(ARGS);
-        let group = Group::try_from_ref(p).await.map_err(|e| Error::parse_group(e, i))?;
-        groups.push(group);
-        i += 1;
-        while let Some(mut args) = next {
-            args.insert(0, NAME.to_string());
-            let p = Parser::new(p.args, &args).map_err(|e| {
-                if let Error::Clap(inner) = &e {
-                    if inner.kind == clap::ErrorKind::HelpDisplayed {
-                        return e;
-                    }
-                }
-                Error::parse_group(e, i)
-            })?;
-            next = p.strings(ARGS);
-            let group = Group::try_from_ref(&p).await.map_err(|e| Error::parse_group(e, i))?;
-            groups.push(group);
-            i += 1;
-        }
-        let r = Groups(groups);
-        Ok(r)
+impl FromIterator<Group> for Groups {
+    fn from_iter<T: IntoIterator<Item = Group>>(iter: T) -> Self {
+        let v: Vec<_> = iter.into_iter().collect();
+        Self(v)
     }
 }

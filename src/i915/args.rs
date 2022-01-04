@@ -10,10 +10,10 @@ const I915_MAX: &str = "i915-max";
 const I915_BOOST: &str = "i915-boost";
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for super::I915 {
+impl TryFromRef<Parser> for super::I915 {
     type Error = Error;
 
-    async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
+    async fn try_from_ref(p: &Parser) -> Result<Self> {
         let r = Self {
             i915: p.drm_ids::<I915Driver>(I915).await?,
             i915_min: p.megahertz(I915_MIN)?,
@@ -65,14 +65,13 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
 }
 
 fn i915_help() -> String {
-    "Target i915 drm integer or bus ids".to_string()
+    "Target i915 drm card indexes or bus ids".to_string()
 }
 
 #[rustfmt::skip]
 fn i915_help_long() -> String {
-"Target i915 drm integer or bus ids, comma-delimited
+"Target i915 drm card indexes or bus ids, comma-delimited
 Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
-
 ".to_string()
 }
 

@@ -1,28 +1,32 @@
 mod group;
 mod parser;
 
-use tokio::io::{stderr, stdout, AsyncWrite, AsyncWriteExt as _};
+use std::iter::once;
 
-use crate::cli::group::Groups;
+use futures::stream::{self, StreamExt as _, TryStreamExt as _};
+
+use crate::cli::group::{Group, Groups};
 pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
 use crate::util::convert::*;
+use crate::util::io::{eprint, print};
 use crate::{Cpu, Drm, Error, Nvml, Rapl, Result, I915};
 
-const NAME: &str = "knobs";
+const ARGV0: &str = "knobs";
 
 const QUIET: &str = "quiet";
 const SHOW_CPU: &str = "show-cpu";
 const SHOW_DRM: &str = "show-drm";
 const SHOW_RAPL: &str = "show-rapl";
-const ARGS: &str = "ARGS";
 
-const QUIET_SHORT: &str = "q";
+const QUIET_SHORT: char = 'q';
+
+const GROUP_SEP: &str = "--";
 
 #[derive(Debug, Default)]
 pub(crate) struct Arg {
     pub(crate) name: Option<&'static str>,
     pub(crate) long: Option<&'static str>,
-    pub(crate) short: Option<&'static str>,
+    pub(crate) short: Option<char>,
     pub(crate) value_name: Option<&'static str>,
     pub(crate) help: Option<String>,
     pub(crate) help_long: Option<String>,
@@ -31,7 +35,7 @@ pub(crate) struct Arg {
     pub(crate) raw: Option<bool>,
 }
 
-fn args_before() -> Vec<Arg> {
+fn table_args() -> Vec<Arg> {
     vec![
         Arg {
             name: QUIET.into(),
@@ -61,48 +65,60 @@ fn args_before() -> Vec<Arg> {
     ]
 }
 
-fn args_after() -> Vec<Arg> {
+fn group_arg() -> Vec<Arg> {
+    // This argument exists to inform users about argument
+    // groups via -h/--help. It is not parsed by the cli.
     vec![Arg {
-        name: ARGS.into(),
-        help: "Additional argument groups".to_string().into(),
-        help_long: "Additional argument groups delimited by --".to_string().into(),
+        name: "ARGS".into(),
         raw: true.into(),
+        help: "Additional option groups".to_string().into(),
+        help_long: "Additional option groups delimited by --".to_string().into(),
         ..Default::default()
     }]
 }
 
 fn args() -> impl Iterator<Item = Arg> {
-    args_before()
+    table_args()
         .into_iter()
         .chain(Cpu::args())
         .chain(Rapl::args())
         .chain(I915::args())
         .chain(Nvml::args())
-        .chain(args_after())
+        .chain(group_arg())
 }
 
-async fn write<W>(w: &mut W, msg: &str, nl: bool)
-where
-    W: AsyncWrite + Send + Unpin,
-{
-    let _ = w.write_all(msg.as_bytes()).await;
-    if nl {
-        let _ = w.write_all("\n".as_bytes()).await;
-    }
-    let _ = w.flush().await;
+fn argvs(argv: &[String]) -> Vec<Vec<&str>> {
+    argv.split(|arg| arg == GROUP_SEP)
+        .map(|argv| {
+            let argv = argv.iter().map(|v| v.as_str());
+            let argv: Vec<_> = once(ARGV0).chain(argv).collect();
+            argv
+        })
+        .collect()
 }
 
-async fn print(msg: &str, nl: bool) {
-    let mut w = stdout();
-    write(&mut w, msg, nl).await
+async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
+    let groups = argvs.into_iter().map(|argv| (&args, argv));
+    let groups: Vec<_> = stream::iter(groups)
+        .enumerate()
+        .map(Result::Ok)
+        .and_then(|(i, (args, argv))| async move {
+            let r = async {
+                let parser = Parser::new(args, &argv)?;
+                let r = Group::try_from_ref(&parser).await?;
+                Ok(r)
+            }
+            .await
+            .map_err(|e| Error::parse_group(e, i + 1))?;
+            Ok(r)
+        })
+        .try_collect()
+        .await?;
+    let groups = Groups::from_iter(groups);
+    Ok(groups)
 }
 
-async fn eprint(msg: &str, nl: bool) {
-    let mut w = stderr();
-    write(&mut w, msg, nl).await
-}
-
-async fn tabulate(parser: &Parser<'_>, groups: &Groups) -> Result<()> {
+async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     let show_cpu = parser.flag(SHOW_CPU).is_some();
     let show_rapl = parser.flag(SHOW_RAPL).is_some();
     let show_drm = parser.flag(SHOW_DRM).is_some();
@@ -135,10 +151,11 @@ async fn tabulate(parser: &Parser<'_>, groups: &Groups) -> Result<()> {
 }
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
-    let argv: Vec<_> = argv.into_iter().collect();
     let args: Vec<_> = args().collect();
-    let parser = Parser::new(&args, &argv).map_err(|e| Error::parse_group(e, 1))?;
-    let groups = Groups::try_from_ref(&parser).await?;
+    let argv: Vec<_> = argv.into_iter().skip(1).collect();
+    let argvs = argvs(&argv);
+    let parser = Parser::new(&args, &argvs[0]).map_err(|e| Error::parse_group(e, 1))?;
+    let groups = groups(args, argvs).await?;
     groups.apply().await?;
     if parser.flag(QUIET).is_none() {
         tabulate(&parser, &groups).await?;
@@ -150,7 +167,7 @@ pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
     if let Err(e) = try_run_with_args(argv).await {
         match e {
             Error::Clap(e) => {
-                if let clap::ErrorKind::HelpDisplayed = e.kind {
+                if let clap::ErrorKind::DisplayHelp = e.kind {
                     print(&e.to_string(), false).await;
                     std::process::exit(0);
                 } else {

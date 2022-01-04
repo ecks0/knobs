@@ -10,17 +10,17 @@ pub(crate) const RAPL_CONSTRAINT: &str = "rapl-constraint";
 pub(crate) const RAPL_LIMIT: &str = "rapl-limit";
 pub(crate) const RAPL_WINDOW: &str = "rapl-window";
 
-pub(crate) const RAPL_PACKAGE_SHORT: &str = "P";
-pub(crate) const RAPL_SUBZONE_SHORT: &str = "S";
-pub(crate) const RAPL_CONSTRAINT_SHORT: &str = "C";
-pub(crate) const RAPL_LIMIT_SHORT: &str = "L";
-pub(crate) const RAPL_WINDOW_SHORT: &str = "W";
+pub(crate) const RAPL_PACKAGE_SHORT: char = 'P';
+pub(crate) const RAPL_SUBZONE_SHORT: char = 'S';
+pub(crate) const RAPL_CONSTRAINT_SHORT: char = 'C';
+pub(crate) const RAPL_LIMIT_SHORT: char = 'L';
+pub(crate) const RAPL_WINDOW_SHORT: char = 'W';
 
 #[async_trait]
-impl<'a> TryFromRef<Parser<'a>> for super::Rapl {
+impl TryFromRef<Parser> for super::Rapl {
     type Error = Error;
 
-    async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
+    async fn try_from_ref(p: &Parser) -> Result<Self> {
         let r = Self {
             rapl_constraint: p.rapl_constraint(RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT).await?,
             rapl_limit: p.watts(RAPL_LIMIT)?,
@@ -100,7 +100,6 @@ pub(crate) fn rapl_limit_help_long() -> String {
     format!(
 "Set rapl power limit in watts per
 --{}/{}/{}
-
 ", RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT)
 }
 
@@ -113,6 +112,5 @@ pub(crate) fn rapl_window_help_long() -> String {
     format!(
 "Set rapl power window in microseconds per
 --{}/{}/{}
-
 ", RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT)
 }
