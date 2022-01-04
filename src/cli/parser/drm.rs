@@ -1,8 +1,10 @@
+use std::fmt::Display;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
 use async_trait::async_trait;
 
+use crate::cli::parser::Integer as _;
 use crate::util::convert::{AsyncFromStr, AsyncTryFrom};
 use crate::{Error, Result};
 
@@ -22,8 +24,17 @@ impl FromStr for BusId {
                 let r = Self { bus, id };
                 Ok(r)
             },
-            None => Err(Error::parse_value("Invalid syntax for bus id")),
+            None => Err(Error::parse_value(format!(
+                "expected bus id syntax {:?}, got {:?}",
+                "BUS:ID", v
+            ))),
         }
+    }
+}
+
+impl Display for BusId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.bus, self.id)
     }
 }
 
@@ -34,7 +45,7 @@ impl From<BusId> for syx::BusId {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum CardId {
     BusId(BusId),
     Index(u64),
@@ -50,13 +61,21 @@ impl FromStr for CardId {
                 Self::BusId(r)
             },
             false => {
-                let r = v
-                    .parse::<u64>()
-                    .map_err(|_| Error::parse_value("Invalid syntax for card index"))?;
+                let r = u64::parse(v)?;
                 Self::Index(r)
             },
         };
         Ok(r)
+    }
+}
+
+impl Display for CardId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::BusId(v) => v.to_string(),
+            Self::Index(v) => v.to_string(),
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -95,27 +114,30 @@ where
     type Error = Error;
 
     async fn async_try_from(v: CardId) -> Result<Self> {
-        let v = match v {
-            CardId::BusId(b) => {
-                let b = b.into();
-                let r = syx::drm::index(&b).await?;
-                Ok(r)
+        let index = match v.clone() {
+            CardId::BusId(v) => {
+                let v = syx::BusId::from(v);
+                let v = syx::drm::index(&v).await?;
+                Ok(v)
             },
             CardId::Index(v) => {
                 if syx::drm::exists(v).await? {
                     Ok(v)
                 } else {
-                    Err(Error::parse_value(format!("Drm card {} not found", v)))
+                    Err(Error::parse_value(format!(
+                        "drm card not found on the system: {}",
+                        v
+                    )))
                 }
             },
         }?;
         let wanted = T::driver();
-        let found = syx::drm::driver(v).await?;
+        let found = syx::drm::driver(index).await?;
         let r = if wanted == found.as_str() {
-            Ok(v)
+            Ok(index)
         } else {
             Err(Error::parse_value(format!(
-                "Drm card {}: expected {} driver, found {}",
+                "drm card {}: expected driver {:?} but system reports {:?}",
                 v, wanted, found
             )))
         }?;

@@ -137,7 +137,7 @@ async fn tabulate(parser: &Parser<'_>, groups: &Groups) -> Result<()> {
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
     let argv: Vec<_> = argv.into_iter().collect();
     let args: Vec<_> = args().collect();
-    let parser = Parser::new(&args, &argv)?;
+    let parser = Parser::new(&args, &argv).map_err(|e| Error::parse_group(e, 1))?;
     let groups = Groups::try_from_ref(&parser).await?;
     groups.apply().await?;
     if parser.flag(QUIET).is_none() {
@@ -159,7 +159,7 @@ pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
                 }
             },
             _ => {
-                eprint(&format!("Error: {}", e), true).await;
+                eprint(&e.to_string(), true).await;
                 std::process::exit(2);
             },
         }

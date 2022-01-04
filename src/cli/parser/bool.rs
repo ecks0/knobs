@@ -13,7 +13,10 @@ impl FromStr for Bool {
         match s.as_str() {
             "0" | "false" => Ok(Self(false)),
             "1" | "true" => Ok(Self(true)),
-            _ => Err(Error::parse_value("Expected 0, 1, false, or true")),
+            _ => Err(Error::parse_value(format!(
+                "expected 0, 1, false, or true, got {:?}",
+                s
+            ))),
         }
     }
 }

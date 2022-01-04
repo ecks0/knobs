@@ -21,10 +21,10 @@ pub(crate) fn frequency(f: Frequency) -> String {
 }
 
 pub(crate) fn power(p: Power) -> String {
-    let mw = p.as_milliwatts().trunc();
-    if 0. == mw {
+    let mw = p.as_milliwatts().trunc() as u64;
+    if 0 == mw {
         "0 W".to_string()
-    } else if mw < 1000. || mw % 1000. == 0. {
+    } else if mw < 1000 || mw % 1000 == 0 {
         format!("{:.0}", p)
     } else {
         format!("{:.1}", p)

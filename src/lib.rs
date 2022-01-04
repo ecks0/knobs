@@ -6,6 +6,8 @@ mod nvml;
 mod rapl;
 mod util;
 
+use std::fmt::Display;
+
 pub use clap::Error as ClapError;
 pub use syx::Error as SyxError;
 pub use tokio::io::Error as IoError;
@@ -19,30 +21,43 @@ pub(crate) use crate::rapl::Rapl;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("group {group}:\n{error}")]
+    ApplyGroup { error: String, group: usize },
+
     #[error(transparent)]
     Clap(#[from] ClapError),
-
-    #[error("{0}")]
-    TableIo(IoError),
 
     #[error(transparent)]
     Syx(#[from] SyxError),
 
     #[error("--{flag}: {error}")]
-    ParseFlag { flag: String, error: String },
+    ParseFlag { error: String, flag: String },
+
+    #[error("group {group}: {error}")]
+    ParseGroup { error: String, group: usize },
 
     #[error("{0}")]
     ParseValue(String),
 }
 
 impl Error {
-    fn parse_flag(flag: impl Into<String>, error: impl ToString) -> Self {
-        let flag = flag.into();
+    fn apply_group(error: Self, group: usize) -> Self {
         let error = error.to_string();
-        Self::ParseFlag { flag, error }
+        Self::ParseGroup { error, group }
     }
 
-    fn parse_value(message: impl ToString) -> Self {
+    fn parse_flag(error: Self, flag: impl Display) -> Self {
+        let error = error.to_string();
+        let flag = flag.to_string();
+        Self::ParseFlag { error, flag }
+    }
+
+    fn parse_group(error: Self, group: usize) -> Self {
+        let error = error.to_string();
+        Self::ParseGroup { error, group }
+    }
+
+    fn parse_value(message: impl Display) -> Self {
         let message = message.to_string();
         Self::ParseValue(message)
     }

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::str::FromStr;
 
 use async_trait::async_trait;
@@ -49,10 +50,25 @@ where
                 Ok(r)
             },
             _ => Err(Error::parse_value(format!(
-                "Could not parse string as range: {:?}",
+                "could not parse as range: {}",
                 s
             ))),
         }
+    }
+}
+
+impl<T> Display for Range<T>
+where
+    T: Integer + Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match &self {
+            Self::From(r) => format!("{}..", r.start),
+            Self::Inclusive(r) => format!("{}..{}", r.start(), r.end()),
+            Self::ToInclusive(r) => format!("..{}", r.end),
+            Self::Unbounded => "..".to_string(),
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -64,47 +80,48 @@ impl AsyncTryFrom<Range<u64>> for CpuIds {
     type Error = Error;
 
     async fn async_try_from(v: Range<u64>) -> Result<Self> {
+        fn err(v: &Range<u64>) -> Error {
+            Error::parse_value(format!(
+                "range includes cpu ids not found on the system: {}",
+                v
+            ))
+        }
         let all = cpu::ids().await;
         let cpu_0 = all.iter().min().cloned();
         let cpu_n = all.iter().max().cloned();
         if let (Some(cpu_0), Some(cpu_n)) = (cpu_0, cpu_n) {
-            let r = match v {
-                Range::From(v) => {
-                    if v.start <= cpu_n {
-                        Ok(v.start..=cpu_n)
+            let r = match &v {
+                Range::From(r) => {
+                    if r.start <= cpu_n {
+                        Ok(r.start..=cpu_n)
                     } else {
-                        Err(Error::parse_value(format!(
-                            "Invalid cpu id range: {}..",
-                            v.start
-                        )))
+                        Err(err(&v))
                     }
                 },
-                Range::Inclusive(v) => {
-                    if v.start() <= &cpu_n && v.end() <= &cpu_n {
-                        Ok(v)
+                Range::Inclusive(r) => {
+                    if r.start() <= &cpu_n && r.end() <= &cpu_n {
+                        Ok(r.clone())
                     } else {
-                        Err(Error::parse_value(format!(
-                            "Invalid cpu id range: {}..{}",
-                            v.start(),
-                            v.end()
-                        )))
+                        Err(err(&v))
                     }
                 },
-                Range::ToInclusive(v) => {
-                    if v.end <= cpu_n {
-                        Ok(cpu_0..=v.end)
+                Range::ToInclusive(r) => {
+                    if r.end <= cpu_n {
+                        Ok(cpu_0..=r.end)
                     } else {
-                        Err(Error::parse_value(format!(
-                            "Invalid cpu id range: ..{}",
-                            v.end
-                        )))
+                        Err(err(&v))
                     }
                 },
                 Range::Unbounded => Ok(cpu_0..=cpu_n),
             }?;
+            r.clone()
+                .into_iter()
+                .try_for_each(|r| if all.contains(&r) { Ok(()) } else { Err(err(&v)) })?;
             Ok(Self(r))
         } else {
-            Err(Error::parse_value("Unable to read system cpu ids"))
+            Err(Error::parse_value(
+                "unable to read system cpu ids for argument validation",
+            ))
         }
     }
 }

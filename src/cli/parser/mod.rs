@@ -71,6 +71,7 @@ impl<'a> Parser<'a> {
     pub(super) fn new(args: &'a [Arg], argv: &[String]) -> Result<Self> {
         let clap_args: Vec<clap::Arg> = args.iter().map(From::from).collect();
         let matches = clap::App::new(NAME)
+            .setting(clap::AppSettings::ColorNever)
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .setting(clap::AppSettings::DisableHelpSubcommand)
             .setting(clap::AppSettings::DisableVersion)
@@ -89,7 +90,7 @@ impl<'a> Parser<'a> {
             .str(name)
             .map(Bool::from_str)
             .transpose()
-            .map_err(|e| Error::parse_flag(name, e))?
+            .map_err(|e| Error::parse_flag(e, name))?
             .map(Into::into))
     }
 
@@ -104,7 +105,7 @@ impl<'a> Parser<'a> {
                     Ok(set)
                 })
                 .await
-                .map_err(|e| Error::parse_flag(name, e))?
+                .map_err(|e| Error::parse_flag(e, name))?
                 .into_iter()
                 .collect();
             r.sort_unstable();
@@ -128,7 +129,7 @@ impl<'a> Parser<'a> {
                 })
                 .try_collect()
                 .await
-                .map_err(|e| Error::parse_flag(name, e))?;
+                .map_err(|e| Error::parse_flag(e, name))?;
             r.sort_unstable();
             r.dedup();
             Some(r)
@@ -143,7 +144,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn int<I: Integer>(&self, name: &str) -> Result<Option<I>> {
-        self.str(name).map(I::parse).transpose().map_err(|e| Error::parse_flag(name, e))
+        self.str(name).map(I::parse).transpose().map_err(|e| Error::parse_flag(e, name))
     }
 
     pub(crate) fn megahertz(&self, name: &str) -> Result<Option<Frequency>> {
@@ -151,7 +152,7 @@ impl<'a> Parser<'a> {
             .str(name)
             .map(Megahertz::from_str)
             .transpose()
-            .map_err(|e| Error::parse_flag(name, e))?
+            .map_err(|e| Error::parse_flag(e, name))?
             .map(Into::into))
     }
 
@@ -160,7 +161,7 @@ impl<'a> Parser<'a> {
             .str(name)
             .map(Microseconds::from_str)
             .transpose()
-            .map_err(|e| Error::parse_flag(name, e))?
+            .map_err(|e| Error::parse_flag(e, name))?
             .map(Into::into))
     }
 
@@ -169,8 +170,8 @@ impl<'a> Parser<'a> {
             .map(|v| {
                 if v > 15 {
                     Err(Error::parse_flag(
+                        Error::parse_value("Energy/performance bias must be within 0..=15"),
                         name,
-                        "Energy/performance bias must be within 0..=15",
                     ))
                 } else {
                     Ok(v)
@@ -191,22 +192,18 @@ impl<'a> Parser<'a> {
                 let subzone = self.int::<u64>(subzone_name)?;
                 if !syx::rapl::zone::exists((package, None))
                     .await
-                    .map_err(|e| Error::parse_flag(package_name, e))?
+                    .map_err(|e| Error::parse_flag(e.into(), package_name))?
                 {
-                    return Err(Error::parse_flag(
-                        package_name,
-                        format!("Package not found: {}", package),
-                    ));
+                    let s = format!("Package not found: {}", package);
+                    return Err(Error::parse_flag(Error::parse_value(s), package_name));
                 }
                 if let Some(subzone) = subzone {
                     if !syx::rapl::zone::exists((package, subzone))
                         .await
-                        .map_err(|e| Error::parse_flag(subzone_name, e))?
+                        .map_err(|e| Error::parse_flag(e.into(), subzone_name))?
                     {
-                        return Err(Error::parse_flag(
-                            subzone_name,
-                            format!("Subzone {} not found in package {}", subzone, package),
-                        ));
+                        let s = format!("Subzone {} not found in package {}", subzone, package);
+                        return Err(Error::parse_flag(Error::parse_value(s), subzone_name));
                     }
                 }
                 let id = (package, subzone, constraint);
@@ -218,7 +215,7 @@ impl<'a> Parser<'a> {
                     if let Some(v) = subzone {
                         s.push_str(&format!(", subzone {}", v));
                     }
-                    return Err(Error::parse_flag(constraint_name, s));
+                    return Err(Error::parse_flag(Error::parse_value(s), constraint_name));
                 }
                 return Ok(Some(id));
             }
@@ -247,7 +244,7 @@ impl<'a> Parser<'a> {
             .str(name)
             .map(Watts::from_str)
             .transpose()
-            .map_err(|e| Error::parse_flag(name, e))?
+            .map_err(|e| Error::parse_flag(e, name))?
             .map(Into::into))
     }
 }

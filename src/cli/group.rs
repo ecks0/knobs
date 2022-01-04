@@ -63,28 +63,36 @@ impl Groups {
         r
     }
 
-    async fn apply_cpu_policies(&self) -> Result<()> {
-        // Typically a CPU must be online in order to modify its policy settings,
-        // so we will temporarily online all CPU ids which have policy values.
+    pub(super) async fn apply(&self) -> Result<()> {
+        // Temporarily online all offline CPUs which have policy values to apply.
         let ids = self.cpu_policy_ids();
         let onlined = util::cpu::set_online(ids).await?;
-        for v in &self.0 {
-            if v.cpu.has_policy_values() {
-                v.cpu.apply_policy().await?;
-                util::cpu::wait_for_policy().await;
+        let r = async {
+            for (i, v) in self.0.iter().enumerate() {
+                if v.cpu.has_policy_values() {
+                    v.cpu.apply_policy().await.map_err(|e| Error::apply_group(e, i))?;
+                    util::cpu::wait_for_policy().await;
+                }
             }
+            Result::Ok(())
         }
-        util::cpu::set_offline(onlined).await?;
-        Ok(())
-    }
-
-    pub(super) async fn apply(&self) -> Result<()> {
-        self.apply_cpu_policies().await?;
-        for v in &self.0 {
-            v.cpu.apply_online().await?;
-            v.rapl.apply().await?;
-            v.i915.apply().await?;
-            v.nvml.apply().await?;
+        .await;
+        if r.is_err() {
+            let _ = util::cpu::set_offline(onlined).await;
+            r?
+        } else {
+            util::cpu::set_offline(onlined).await?;
+        }
+        for (i, v) in self.0.iter().enumerate() {
+            async {
+                v.cpu.apply_online().await?;
+                v.rapl.apply().await?;
+                v.i915.apply().await?;
+                v.nvml.apply().await?;
+                Result::Ok(())
+            }
+            .await
+            .map_err(|e| Error::apply_group(e, i))?;
         }
         Ok(())
     }
@@ -95,14 +103,26 @@ impl<'a> TryFromRef<Parser<'a>> for Groups {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser<'a>) -> Result<Self> {
+        let mut i = 1;
         let mut groups = vec![];
-        let mut args = p.strings(ARGS);
-        groups.push(p.try_ref_into().await?);
-        while let Some(mut a) = args {
-            a.insert(0, NAME.to_string());
-            let p = Parser::new(p.args, &a)?;
-            args = p.strings(ARGS);
-            groups.push(p.try_ref_into().await?);
+        let mut next = p.strings(ARGS);
+        let group = Group::try_from_ref(p).await.map_err(|e| Error::parse_group(e, i))?;
+        groups.push(group);
+        i += 1;
+        while let Some(mut args) = next {
+            args.insert(0, NAME.to_string());
+            let p = Parser::new(p.args, &args).map_err(|e| {
+                if let Error::Clap(inner) = &e {
+                    if inner.kind == clap::ErrorKind::HelpDisplayed {
+                        return e;
+                    }
+                }
+                Error::parse_group(e, i)
+            })?;
+            next = p.strings(ARGS);
+            let group = Group::try_from_ref(&p).await.map_err(|e| Error::parse_group(e, i))?;
+            groups.push(group);
+            i += 1;
         }
         let r = Groups(groups);
         Ok(r)
