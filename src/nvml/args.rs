@@ -7,7 +7,9 @@ use crate::{Error, Result};
 const NVML: &str = "nvml";
 const NVML_GPU_MIN: &str = "nvml-gpu-min";
 const NVML_GPU_MAX: &str = "nvml-gpu-max";
+const NVML_GPU_RESET: &str = "nvml-gpu-reset";
 const NVML_POWER: &str = "nvml-power";
+const NVML_POWER_RESET: &str = "nvml-power-reset";
 
 #[async_trait]
 impl TryFromRef<Parser> for super::Nvml {
@@ -19,7 +21,9 @@ impl TryFromRef<Parser> for super::Nvml {
             nvml: p.drm_ids::<NvmlDriver>(NVML).await?,
             nvml_gpu_min: p.megahertz(NVML_GPU_MIN)?,
             nvml_gpu_max: p.megahertz(NVML_GPU_MAX)?,
+            nvml_gpu_reset: p.flag(NVML_GPU_RESET),
             nvml_power: p.watts(NVML_POWER)?,
+            nvml_power_reset: p.flag(NVML_POWER_RESET),
         };
         log::trace!("nvml parse done");
         Ok(r)
@@ -55,12 +59,30 @@ pub(super) fn args() -> Vec<Arg> {
             ..Default::default()
         },
         Arg {
+            name: NVML_GPU_RESET.into(),
+            long: NVML_GPU_RESET.into(),
+            help: nvml_gpu_reset_help().into(),
+            help_long: nvml_gpu_reset_help_long().into(),
+            requires: vec![NVML].into(),
+            conflicts: vec![NVML_GPU_MIN, NVML_GPU_MAX].into(),
+            ..Default::default()
+        },
+        Arg {
             name: NVML_POWER.into(),
             long: NVML_POWER.into(),
             value_name: "FLOAT".into(),
             help: nvml_power_help().into(),
             help_long: nvml_power_help_long().into(),
             requires: vec![NVML].into(),
+            ..Default::default()
+        },
+        Arg {
+            name: NVML_POWER_RESET.into(),
+            long: NVML_POWER_RESET.into(),
+            help: nvml_power_reset_help().into(),
+            help_long: nvml_power_reset_help_long().into(),
+            requires: vec![NVML].into(),
+            conflicts: vec![NVML_POWER].into(),
             ..Default::default()
         },
     ]
@@ -77,6 +99,7 @@ Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
 
 ".to_string()
 }
+
 fn nvml_gpu_min_help() -> String {
     "Set nvml min gpu freq in megahertz".to_string()
 }
@@ -93,10 +116,26 @@ fn nvml_gpu_max_help_long() -> String {
     format!("Set nvml max gpu freq in megahertz per --{}", NVML)
 }
 
+fn nvml_gpu_reset_help() -> String {
+    "Reset nvml gpu freq to default".to_string()
+}
+
+fn nvml_gpu_reset_help_long() -> String {
+    format!("Reset nvml gpu freq to default per --{}", NVML)
+}
+
 fn nvml_power_help() -> String {
     "Set nvml device power limit in watts".to_string()
 }
 
 fn nvml_power_help_long() -> String {
     format!("Set nvml device power limit in watts per --{}", NVML)
+}
+
+fn nvml_power_reset_help() -> String {
+    "Reset nvml power limit to default".to_string()
+}
+
+fn nvml_power_reset_help_long() -> String {
+    format!("Reset nvml power limit to default per --{}", NVML)
 }

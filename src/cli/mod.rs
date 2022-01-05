@@ -32,8 +32,9 @@ fn config_logging() {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{} [{:>20}] {}",
+                "{} {} [{:>20}] {}",
                 chrono::Local::now().format("%H:%M:%S%.6f"),
+                record.level().to_string().chars().next().unwrap_or('_'),
                 record.target(),
                 record.args()
             )

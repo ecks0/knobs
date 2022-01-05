@@ -12,7 +12,9 @@ pub(crate) struct Nvml {
     pub(crate) nvml: Option<Vec<u64>>,
     pub(crate) nvml_gpu_min: Option<Frequency>,
     pub(crate) nvml_gpu_max: Option<Frequency>,
+    pub(crate) nvml_gpu_reset: Option<()>,
     pub(crate) nvml_power: Option<Power>,
+    pub(crate) nvml_power_reset: Option<()>,
 }
 
 impl Nvml {
@@ -37,10 +39,16 @@ impl Nvml {
                         let max = max.as_megahertz().trunc() as u32;
                         syx::nvml::set_gfx_freq(id, min, max).await?;
                     }
-                    if let Some(v) = self.nvml_power {
-                        let v = v.as_milliwatts().trunc() as u32;
-                        syx::nvml::set_power_limit(id, v).await?;
-                    }
+                }
+                if self.nvml_gpu_reset.is_some() {
+                    syx::nvml::reset_gfx_freq(id).await?;
+                }
+                if let Some(v) = self.nvml_power {
+                    let v = v.as_milliwatts().trunc() as u32;
+                    syx::nvml::set_power_limit(id, v).await?;
+                }
+                if self.nvml_power_reset.is_some() {
+                    syx::nvml::reset_power_limit(id).await?;
                 }
             }
         }

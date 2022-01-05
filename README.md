@@ -5,7 +5,7 @@ A command-line utility for controlling Linux performance settings.
 | Topic        | Supported values                            |
 | ------------ | ------------------------------------------- |
 | cpu          | on/offline, governor, frequencies, epb/epp  |
-| rapl         | power limit/time window per zone/constraint |
+| intel_rapl   | power limit/time window per zone/constraint |
 | i915         | min/max/boost frequencies                   |
 | nvml         | gpu clock min/max frequency, power limit    |
 
