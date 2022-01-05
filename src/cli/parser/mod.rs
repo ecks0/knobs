@@ -164,18 +164,7 @@ impl Parser {
     }
 
     pub(crate) fn pstate_epb(&self, name: &str) -> Result<Option<u64>> {
-        self.int(name)?
-            .map(|v| {
-                if v > 15 {
-                    Err(Error::parse_flag(
-                        Error::parse_value("Energy/performance bias must be within 0..=15"),
-                        name,
-                    ))
-                } else {
-                    Ok(v)
-                }
-            })
-            .transpose()
+        self.int(name)
     }
 
     pub(crate) async fn rapl_constraint(

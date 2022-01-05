@@ -93,7 +93,7 @@ pub(super) fn args() -> impl IntoIterator<Item = Arg> {
             name: CPU_EPB.into(),
             long: CPU_EPB.into(),
             short: None,
-            value_name: "0..=15".into(),
+            value_name: "INT".into(),
             help: cpu_epb_help().into(),
             help_long: cpu_epb_help_long().into(),
             requires: vec![CPU].into(),
@@ -167,10 +167,7 @@ fn cpu_epb_help() -> String {
 
 #[rustfmt::skip]
 fn cpu_epb_help_long() -> String {
-    format!(
-"Set cpu pstate energy/performance bias per -{}/--{}.
-Expects an integer within 0..=15
-", CPU_SHORT, CPU)
+    format!("Set cpu pstate energy/performance bias per -{}/--{}", CPU_SHORT, CPU)
 }
 
 fn cpu_epp_help() -> String {
