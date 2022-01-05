@@ -70,7 +70,7 @@ impl Groups {
         let r = async {
             for (i, v) in self.0.iter().enumerate() {
                 if v.cpu.has_policy_values() {
-                    v.cpu.apply_policy().await.map_err(|e| Error::apply_group(e, i))?;
+                    v.cpu.apply_policy().await.map_err(|e| Error::apply_group(e, i + 1))?;
                     util::cpu::wait_for_policy().await;
                 }
             }
@@ -92,7 +92,7 @@ impl Groups {
                 Result::Ok(())
             }
             .await
-            .map_err(|e| Error::apply_group(e, i))?;
+            .map_err(|e| Error::apply_group(e, i + 1))?;
         }
         Ok(())
     }

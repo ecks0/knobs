@@ -118,6 +118,16 @@ async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
     Ok(groups)
 }
 
+async fn parse(argv: impl IntoIterator<Item = String>) -> Result<(Parser, Groups)> {
+    let args: Vec<_> = args().collect();
+    let argv: Vec<_> = argv.into_iter().skip(1).collect();
+    let argvs = argvs(&argv);
+    let parser = Parser::new(&args, &argvs[0]).map_err(|e| Error::parse_group(e, 1))?;
+    let groups = groups(args, argvs).await?;
+    let r = (parser, groups);
+    Ok(r)
+}
+
 async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     let show_cpu = parser.flag(SHOW_CPU).is_some();
     let show_rapl = parser.flag(SHOW_RAPL).is_some();
@@ -151,11 +161,7 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
 }
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
-    let args: Vec<_> = args().collect();
-    let argv: Vec<_> = argv.into_iter().skip(1).collect();
-    let argvs = argvs(&argv);
-    let parser = Parser::new(&args, &argvs[0]).map_err(|e| Error::parse_group(e, 1))?;
-    let groups = groups(args, argvs).await?;
+    let (parser, groups) = parse(argv).await?;
     groups.apply().await?;
     if parser.flag(QUIET).is_none() {
         tabulate(&parser, &groups).await?;
@@ -181,6 +187,7 @@ pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
             },
         }
     }
+    std::process::exit(0);
 }
 
 pub async fn run() {

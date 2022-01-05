@@ -21,22 +21,22 @@ pub(crate) use crate::rapl::Rapl;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("group {group}:\n{error}")]
+    #[error("Group {group}: {error}")]
     ApplyGroup { error: String, group: usize },
 
     #[error(transparent)]
     Clap(#[from] ClapError),
 
-    #[error(transparent)]
+    #[error("error: {0}")]
     Syx(#[from] SyxError),
 
-    #[error("--{flag}: {error}")]
+    #[error("error: --{flag}: {error}")]
     ParseFlag { error: String, flag: String },
 
-    #[error("group {group}: {error}")]
+    #[error("Group {group}: {error}")]
     ParseGroup { error: String, group: usize },
 
-    #[error("{0}")]
+    #[error("error: {0}")]
     ParseValue(String),
 }
 
