@@ -188,7 +188,7 @@ impl Parser {
         if let Some(package) = self.int::<u64>(package_name)? {
             if let Some(constraint) = self.int::<u64>(constraint_name)? {
                 let subzone = self.int::<u64>(subzone_name)?;
-                if !syx::rapl::zone::exists((package, None))
+                if !syx::intel_rapl::zone::exists((package, None))
                     .await
                     .map_err(|e| Error::parse_flag(e.into(), package_name))?
                 {
@@ -196,7 +196,7 @@ impl Parser {
                     return Err(Error::parse_flag(Error::parse_value(s), package_name));
                 }
                 if let Some(subzone) = subzone {
-                    if !syx::rapl::zone::exists((package, subzone))
+                    if !syx::intel_rapl::zone::exists((package, subzone))
                         .await
                         .map_err(|e| Error::parse_flag(e.into(), subzone_name))?
                     {
@@ -205,7 +205,7 @@ impl Parser {
                     }
                 }
                 let id = (package, subzone, constraint);
-                if !syx::rapl::constraint::exists(id).await? {
+                if !syx::intel_rapl::constraint::exists(id).await? {
                     let mut s = format!(
                         "Constraint {} not found for package {}",
                         constraint, package

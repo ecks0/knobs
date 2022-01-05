@@ -30,11 +30,11 @@ impl Rapl {
         if let Some(id) = self.rapl_constraint {
             if let Some(v) = self.rapl_limit {
                 let v = v.as_microwatts().trunc() as u64;
-                syx::rapl::constraint::set_power_limit_uw(id, v).await?;
+                syx::intel_rapl::constraint::set_power_limit_uw(id, v).await?;
             }
             if let Some(v) = self.rapl_window {
                 let v: u64 = v.as_micros().try_into().unwrap();
-                syx::rapl::constraint::set_time_window_us(id, v).await?;
+                syx::intel_rapl::constraint::set_time_window_us(id, v).await?;
             }
         }
         log::trace!("rapl apply done");

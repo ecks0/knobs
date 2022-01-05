@@ -69,10 +69,10 @@ impl Cpu {
                     syx::cpufreq::set_scaling_max_freq(id, v).await?;
                 }
                 if let Some(v) = self.cpu_epb {
-                    syx::pstate::policy::set_energy_perf_bias(id, v).await?;
+                    syx::intel_pstate::policy::set_energy_perf_bias(id, v).await?;
                 }
                 if let Some(v) = &self.cpu_epp {
-                    syx::pstate::policy::set_energy_performance_preference(id, v).await?;
+                    syx::intel_pstate::policy::set_energy_performance_preference(id, v).await?;
                 }
             }
         }

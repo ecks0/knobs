@@ -106,7 +106,7 @@ fn args() -> impl Iterator<Item = Arg> {
 }
 
 fn argvs(argv: &[String]) -> Vec<Vec<&str>> {
-    log::trace!("cli argv parse start");
+    log::trace!("cli parse argvs start");
     let r = argv
         .split(|arg| arg == GROUP_SEP)
         .map(|argv| {
@@ -115,12 +115,12 @@ fn argvs(argv: &[String]) -> Vec<Vec<&str>> {
             argv
         })
         .collect();
-    log::trace!("cli argv parse done");
+    log::trace!("cli parse argvs done");
     r
 }
 
 async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
-    log::trace!("cli groups parse start");
+    log::trace!("cli parse groups start");
     let groups = argvs.into_iter().map(|argv| (&args, argv));
     let groups: Vec<_> = stream::iter(groups)
         .enumerate()
@@ -138,7 +138,7 @@ async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
         .try_collect()
         .await?;
     let groups = Groups::from_iter(groups);
-    log::trace!("cli groups parse done");
+    log::trace!("cli parse groups done");
     Ok(groups)
 }
 
@@ -167,7 +167,7 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     let has_drm_vals = has_i915_vals || has_nvml_vals;
     let has_vals = has_cpu_vals || has_rapl_vals || has_drm_vals;
     log::trace!("cli tabulate spawn");
-    let mut tabulators: Vec<_> = vec![];
+    let mut tabulators = vec![];
     if (!has_vals && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
         tabulators.push(tokio::spawn(Cpu::tabulate()));
     }

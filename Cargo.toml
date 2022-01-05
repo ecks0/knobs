@@ -20,7 +20,7 @@ thiserror = "~1.0"
 
 [dependencies.syx]
 git = "https://github.com/ecks0/syx"
-rev = "v0.5.3"
+rev = "v0.6.0"
 features = ["logging", "nvml"]
 
 [dependencies.tokio]

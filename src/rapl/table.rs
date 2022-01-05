@@ -3,8 +3,8 @@ use std::time::Duration;
 use futures::future::try_join_all;
 use futures::stream::TryStreamExt as _;
 use measurements::Power;
-use syx::rapl::constraint::{Values as Constraint, LONG_TERM, SHORT_TERM};
-use syx::rapl::zone::{self, Id as ZoneId, Values as Zone};
+use syx::intel_rapl::constraint::{Values as Constraint, LONG_TERM, SHORT_TERM};
+use syx::intel_rapl::zone::{self, Id as ZoneId, Values as Zone};
 use tokio::time::sleep;
 
 use crate::util::format::{dot, power, Table};

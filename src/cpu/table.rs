@@ -2,8 +2,8 @@ use futures::stream::{iter, StreamExt as _, TryStreamExt as _};
 use measurements::Frequency;
 use syx::cpu::Values as Cpu;
 use syx::cpufreq::Cache as Cpufreq;
-use syx::pstate::policy::Cache as PstatePolicy;
-use syx::pstate::system::Cache as PstateSystem;
+use syx::intel_pstate::policy::Cache as PstatePolicy;
+use syx::intel_pstate::system::Cache as PstateSystem;
 
 use crate::util::format::{dot, frequency, Table, DOT};
 
@@ -208,7 +208,7 @@ pub(super) async fn tabulate() -> Option<String> {
     cpufreqs.sort_by_key(|v| v.id());
     policies.sort_by_key(|v| v.id());
     log::trace!("cpu tabulate spawn");
-    let tabulators: Vec<_> = vec![
+    let tabulators = vec![
         tokio::spawn(cpu_cpufreq(cpus, cpufreqs.clone())),
         tokio::spawn(governors(cpufreqs)),
         tokio::spawn(pstate_status(system.clone())),
