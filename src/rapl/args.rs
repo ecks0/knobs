@@ -21,11 +21,13 @@ impl TryFromRef<Parser> for super::Rapl {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser) -> Result<Self> {
+        log::trace!("rapl parse start");
         let r = Self {
             rapl_constraint: p.rapl_constraint(RAPL_PACKAGE, RAPL_SUBZONE, RAPL_CONSTRAINT).await?,
             rapl_limit: p.watts(RAPL_LIMIT)?,
             rapl_window: p.microseconds(RAPL_WINDOW)?,
         };
+        log::trace!("rapl parse done");
         Ok(r)
     }
 }

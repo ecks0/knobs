@@ -13,8 +13,10 @@ fn mw(v: u32) -> String {
 }
 
 pub(super) async fn tabulate() -> Option<String> {
+    log::trace!("nvml tabulate start");
     let mut cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
     if cards.is_empty() {
+        log::trace!("nvml tabulate none");
         None
     } else {
         cards.sort_by_key(|v| v.id());
@@ -38,8 +40,11 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.power_limit().await.ok().map(mw).unwrap_or_else(dot),
                 card.power_min_limit().await.ok().map(mw).unwrap_or_else(dot),
                 card.power_max_limit().await.ok().map(mw).unwrap_or_else(dot),
-            ])
+            ]);
+            tokio::task::yield_now().await;
         }
-        Some(tab.into())
+        let r = Some(tab.into());
+        log::trace!("nvml tabulate done");
+        r
     }
 }

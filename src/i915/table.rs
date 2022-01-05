@@ -9,8 +9,10 @@ fn mhz(v: u64) -> String {
 }
 
 pub(super) async fn tabulate() -> Option<String> {
+    log::trace!("i915 tabulate start");
     let mut cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
     if cards.is_empty() {
+        log::trace!("i915 tabulate none");
         None
     } else {
         cards.sort_by_key(|v| v.id());
@@ -30,6 +32,8 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.rp0_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
             ]);
         }
-        Some(tab.into())
+        let r = Some(tab.into());
+        log::trace!("i915 tabulate done");
+        r
     }
 }

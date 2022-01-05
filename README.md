@@ -95,6 +95,8 @@ overrides the default table handling behavior descibed above.
 
 Output may be silenced with `--quiet`.
 
+Set `KNOBS_LOG=trace` to see what's happening under the hood.
+
 Example output:
 
 **i7-1160G7**

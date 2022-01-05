@@ -28,6 +28,7 @@ impl Nvml {
     }
 
     pub(crate) async fn apply(&self) -> Result<()> {
+        log::trace!("nvml apply start");
         if let Some(nvml) = self.nvml.clone() {
             for id in nvml {
                 if let Some(min) = self.nvml_gpu_min {
@@ -43,6 +44,7 @@ impl Nvml {
                 }
             }
         }
+        log::trace!("nvml apply done");
         Ok(())
     }
 

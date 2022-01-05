@@ -1,6 +1,7 @@
 mod group;
 mod parser;
 
+use std::io::Write as _;
 use std::iter::once;
 
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
@@ -21,6 +22,24 @@ const SHOW_RAPL: &str = "show-rapl";
 const QUIET_SHORT: char = 'q';
 
 const GROUP_SEP: &str = "--";
+
+fn config_logging() {
+    let name = ARGV0.to_ascii_uppercase();
+    let env = env_logger::Env::default()
+        .filter_or(format!("{}_LOG", name), "error")
+        .write_style_or(format!("{}_LOG_STYLE", name), "never");
+    env_logger::Builder::from_env(env)
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "{} [{:>20}] {}",
+                chrono::Local::now().format("%H:%M:%S%.6f"),
+                record.target(),
+                record.args()
+            )
+        })
+        .init()
+}
 
 #[derive(Debug, Default)]
 pub(crate) struct Arg {
@@ -66,9 +85,8 @@ fn table_args() -> Vec<Arg> {
 }
 
 fn group_arg() -> Vec<Arg> {
-    // This argument exists to inform users about argument
-    // groups via -h/--help. It is not parsed by the cli.
     vec![Arg {
+        // This argument exists for the sake of --help. It is not parsed by the cli.
         name: "ARGS".into(),
         raw: true.into(),
         help: "Additional option groups".to_string().into(),
@@ -88,16 +106,21 @@ fn args() -> impl Iterator<Item = Arg> {
 }
 
 fn argvs(argv: &[String]) -> Vec<Vec<&str>> {
-    argv.split(|arg| arg == GROUP_SEP)
+    log::trace!("cli argv parse start");
+    let r = argv
+        .split(|arg| arg == GROUP_SEP)
         .map(|argv| {
             let argv = argv.iter().map(|v| v.as_str());
             let argv: Vec<_> = once(ARGV0).chain(argv).collect();
             argv
         })
-        .collect()
+        .collect();
+    log::trace!("cli argv parse done");
+    r
 }
 
 async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
+    log::trace!("cli groups parse start");
     let groups = argvs.into_iter().map(|argv| (&args, argv));
     let groups: Vec<_> = stream::iter(groups)
         .enumerate()
@@ -115,20 +138,24 @@ async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
         .try_collect()
         .await?;
     let groups = Groups::from_iter(groups);
+    log::trace!("cli groups parse done");
     Ok(groups)
 }
 
 async fn parse(argv: impl IntoIterator<Item = String>) -> Result<(Parser, Groups)> {
+    log::trace!("cli parse start");
     let args: Vec<_> = args().collect();
     let argv: Vec<_> = argv.into_iter().skip(1).collect();
     let argvs = argvs(&argv);
     let parser = Parser::new(&args, &argvs[0]).map_err(|e| Error::parse_group(e, 1))?;
     let groups = groups(args, argvs).await?;
     let r = (parser, groups);
+    log::trace!("cli parse done");
     Ok(r)
 }
 
 async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
+    log::trace!("cli tabulate start");
     let show_cpu = parser.flag(SHOW_CPU).is_some();
     let show_rapl = parser.flag(SHOW_RAPL).is_some();
     let show_drm = parser.flag(SHOW_DRM).is_some();
@@ -139,28 +166,41 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     let has_nvml_vals = groups.has_nvml_values();
     let has_drm_vals = has_i915_vals || has_nvml_vals;
     let has_vals = has_cpu_vals || has_rapl_vals || has_drm_vals;
-    let mut tables = vec![];
+    log::trace!("cli tabulate spawn");
+    let mut tabulators: Vec<_> = vec![];
     if (!has_vals && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
-        tables.extend(Cpu::tabulate().await);
+        tabulators.push(tokio::spawn(Cpu::tabulate()));
     }
     if (!has_vals && !has_show_flags) || (has_rapl_vals && !has_show_flags) || show_rapl {
-        tables.extend(Rapl::tabulate().await);
+        tabulators.push(tokio::spawn(Rapl::tabulate()));
     }
     if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
-        tables.extend(Drm::tabulate().await);
-        tables.extend(I915::tabulate().await);
-        tables.extend(Nvml::tabulate().await);
+        tabulators.push(tokio::spawn(Drm::tabulate()));
+        tabulators.push(tokio::spawn(I915::tabulate()));
+        tabulators.push(tokio::spawn(Nvml::tabulate()));
     }
+    log::trace!("cli tabulate join");
+    let tables: Vec<_> = futures::future::join_all(tabulators)
+        .await
+        .into_iter()
+        .map(|v| v.expect("tabulate future"))
+        .flatten()
+        .collect();
+    log::trace!("cli tabulate print");
     if tables.is_empty() {
         eprint("No supported devices were found", true).await;
     } else {
-        let tables = tables.join("\n");
-        print(&tables, false).await;
+        let end = tables.len() - 1;
+        for (i, table) in tables.into_iter().enumerate() {
+            print(&table, i != end).await;
+        }
     }
+    log::trace!("cli tabulate done");
     Ok(())
 }
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
+    config_logging();
     let (parser, groups) = parse(argv).await?;
     groups.apply().await?;
     if parser.flag(QUIET).is_none() {

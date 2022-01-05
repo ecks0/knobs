@@ -37,26 +37,34 @@ async fn energy_uj(zone: ZoneId) -> (ZoneId, Option<u64>) {
     const INTERVAL: Duration = Duration::from_millis(200);
     const SCALE: u64 = 1000 / INTERVAL.as_millis() as u64;
 
+    log::trace!("rapl energy_uj start");
     if let Ok(a) = zone::energy_uj(zone).await {
         sleep(INTERVAL).await;
         if let Ok(b) = zone::energy_uj(zone).await {
             let v = b - a;
             let v = v * SCALE;
+            log::trace!("rapl energy_uj done");
             return (zone, Some(v));
         }
     }
+    log::trace!("rapl energy_uj done 2");
     (zone, None)
 }
 
 async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
+    log::trace!("rapl energy_ujs start");
     let f = zones.iter().map(|v| energy_uj(v.id()));
     let f: Vec<_> = f.map(tokio::spawn).collect();
-    try_join_all(f).await.expect("join rapl energy_uj sampler tasks")
+    let r = try_join_all(f).await.expect("join rapl energy_uj sampler tasks");
+    log::trace!("rapl energy_ujs done");
+    r
 }
 
 pub(super) async fn tabulate() -> Option<String> {
+    log::trace!("rapl tabulate start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
+        log::trace!("rapl tabulate none");
         None
     } else {
         zones.sort_by_key(|v| v.id());
@@ -84,6 +92,8 @@ pub(super) async fn tabulate() -> Option<String> {
                 energy_uj.map(uw).unwrap_or_else(dot),
             ]);
         }
-        Some(tab.into())
+        let r = Some(tab.into());
+        log::trace!("rapl tabulate start");
+        r
     }
 }

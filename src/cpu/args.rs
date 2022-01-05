@@ -23,6 +23,7 @@ impl TryFromRef<Parser> for super::Cpu {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser) -> Result<Self> {
+        log::trace!("cpu parse start");
         let r = Self {
             cpu: p.cpu_ids(CPU).await?,
             cpu_on: p.bool(CPU_ON)?,
@@ -32,6 +33,7 @@ impl TryFromRef<Parser> for super::Cpu {
             cpu_epb: p.pstate_epb(CPU_EPB)?,
             cpu_epp: p.string(CPU_EPP),
         };
+        log::trace!("cpu parse done");
         Ok(r)
     }
 }

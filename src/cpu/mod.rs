@@ -41,6 +41,7 @@ impl Cpu {
     }
 
     pub(crate) async fn apply_online(&self) -> Result<()> {
+        log::trace!("cpu apply_online start");
         if let Some(cpu) = &self.cpu {
             if let Some(cpu_on) = self.cpu_on {
                 for id in cpu {
@@ -48,10 +49,12 @@ impl Cpu {
                 }
             }
         }
+        log::trace!("cpu apply_online done");
         Ok(())
     }
 
     pub(crate) async fn apply_policy(&self) -> Result<()> {
+        log::trace!("cpu apply_policy start");
         if let Some(cpu) = self.cpu.clone() {
             for id in cpu {
                 if let Some(v) = &self.cpu_gov {
@@ -73,6 +76,7 @@ impl Cpu {
                 }
             }
         }
+        log::trace!("cpu apply_policy done");
         Ok(())
     }
 

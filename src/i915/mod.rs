@@ -26,6 +26,7 @@ impl I915 {
     }
 
     pub(crate) async fn apply(&self) -> Result<()> {
+        log::trace!("i915 apply start");
         if let Some(i915) = self.i915.clone() {
             for id in i915 {
                 if let Some(v) = self.i915_min {
@@ -42,6 +43,7 @@ impl I915 {
                 }
             }
         }
+        log::trace!("i915 apply done");
         Ok(())
     }
 

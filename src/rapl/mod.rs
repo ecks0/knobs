@@ -26,6 +26,7 @@ impl Rapl {
     }
 
     pub(crate) async fn apply(&self) -> Result<()> {
+        log::trace!("rapl apply start");
         if let Some(id) = self.rapl_constraint {
             if let Some(v) = self.rapl_limit {
                 let v = v.as_microwatts().trunc() as u64;
@@ -36,6 +37,7 @@ impl Rapl {
                 syx::rapl::constraint::set_time_window_us(id, v).await?;
             }
         }
+        log::trace!("rapl apply done");
         Ok(())
     }
 
