@@ -15,10 +15,13 @@ Run with `-h` for short help or `--help` for long help.
 
 Short help:
 ```
-knobs 0.5.0
+knobs 0.5.1
 
 USAGE:
     knobs [OPTIONS] [-- <ARGS>...]
+
+ARGS:
+    <ARGS>...    Additional option groups
 
 OPTIONS:
     -q, --quiet                    Do not print tables
@@ -37,18 +40,15 @@ OPTIONS:
     -C, --rapl-constraint <INT>    Target rapl constraint
     -L, --rapl-limit <FLOAT>       Set rapl power limit in watts
     -W, --rapl-window <INT>        Set rapl power window in microseconds
-        --i915 <IDS>               Target i915 drm integer or bus ids
+        --i915 <IDS>               Target i915 drm card indexes or bus ids
         --i915-min <INT>           Set i915 min freq in megahertz
         --i915-max <INT>           Set i915 max freq in megahertz
         --i915-boost <INT>         Set i915 boost freq in megahertz
-        --nvml <IDS>               Target nvml drm integer or bus ids
+        --nvml <IDS>               Target nvml drm card indexes or bus ids
         --nvml-gpu-min <INT>       Set nvml min gpu freq in megahertz
         --nvml-gpu-max <INT>       Set nvml max gpu freq in megahertz
         --nvml-power <FLOAT>       Set nvml device power limit in watts
-    -h, --help                     Prints help information
-
-ARGS:
-    <ARGS>...    Additional argument groups
+    -h, --help                     Print help information
 ```
 
 ## Running
@@ -65,19 +65,23 @@ are separated by `--`.
 All argument groups are parsed and device IDs verified before values are
 written. Any i/o error will cause an immediate exit with error status.
 
-Most values can be displayed as a non-root user, but setting values
-typically requires running with root privileges.
+The `--quiet` and `--show-*` flags are parsed from the first argument group only.
+
+Tables can be printed as a non-root user, but setting values typically
+requires running with root privileges.
 
 ```
 $ whoami
 notroot
+$ knobs --show-rapl
+ RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
+ ----  ---------  --------  ---------  -----------  ---------  -----
+ 0     package-0  95 W      131 W      27983872 μs  2440 μs    •
+ 0:0   dram       0 W       •          976 μs       •          •
 $ knobs -c .. -g schedutil
-Error: write: /sys/devices/system/cpu/cpufreq/policy0/scaling_governor: Permission denied (os error 13)
+Group 1: error: write: /sys/devices/system/cpu/cpufreq/policy0/scaling_governor: Permission denied (os error 13)
 $
 ```
-
-The `--quiet` and `--show-*` flags are parsed only for the first argument group. All
-other flags are parsed for all argument groups.
 
 ## Output
 
