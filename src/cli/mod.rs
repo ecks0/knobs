@@ -201,11 +201,15 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
     config_logging();
+    log::trace!("cli try_run_with_args start");
     let (parser, groups) = parse(argv).await?;
+    log::trace!("cli try_run_with_args apply");
     groups.apply().await?;
     if parser.flag(QUIET).is_none() {
+        log::trace!("cli try_run_with_args tabulate");
         tabulate(&parser, &groups).await?;
     }
+    log::trace!("cli try_run_with_args done");
     Ok(())
 }
 
