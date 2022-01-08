@@ -4,6 +4,7 @@ mod parser;
 use std::io::Write as _;
 use std::iter::once;
 
+use clap::ErrorKind as ClapErrorKind;
 use futures::future::join_all;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 
@@ -98,12 +99,12 @@ fn group_arg() -> Vec<Arg> {
 }
 
 fn args() -> impl Iterator<Item = Arg> {
-    table_args()
+    Cpu::args()
         .into_iter()
-        .chain(Cpu::args())
         .chain(Rapl::args())
         .chain(I915::args())
         .chain(Nvml::args())
+        .chain(table_args())
         .chain(group_arg())
 }
 
@@ -216,7 +217,10 @@ pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
     if let Err(e) = try_run_with_args(argv).await {
         match e {
             Error::Clap(e) => {
-                if let clap::ErrorKind::DisplayHelp = e.kind {
+                if matches!(
+                    e.kind,
+                    ClapErrorKind::DisplayHelp | ClapErrorKind::DisplayVersion
+                ) {
                     print(&e.to_string(), false).await;
                     std::process::exit(0);
                 } else {

@@ -54,7 +54,10 @@ impl Error {
 
     fn parse_group(error: Self, group: usize) -> Self {
         if let Error::Clap(inner) = &error {
-            if inner.kind == clap::ErrorKind::DisplayHelp {
+            if matches!(
+                inner.kind,
+                clap::ErrorKind::DisplayHelp | clap::ErrorKind::DisplayVersion
+            ) {
                 return error;
             }
         }

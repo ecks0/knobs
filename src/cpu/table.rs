@@ -55,7 +55,8 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
         let values: Vec<_> = stream::iter(cpufreqs.iter())
             .then(|v| async move {
                 let id = v.id().to_string();
-                let govs = v.scaling_available_governors()
+                let govs = v
+                    .scaling_available_governors()
                     .await
                     .ok()
                     .map(|g| g.join(" "))

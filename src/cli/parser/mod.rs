@@ -73,7 +73,7 @@ impl Parser {
             .color(clap::ColorChoice::Never)
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .setting(clap::AppSettings::DisableHelpSubcommand)
-            .setting(clap::AppSettings::DisableVersionFlag)
+            //.setting(clap::AppSettings::DisableVersionFlag)
             .setting(clap::AppSettings::TrailingVarArg)
             .version(clap::crate_version!())
             .args(&clap_args)
