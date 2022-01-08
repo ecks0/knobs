@@ -1,7 +1,8 @@
-use futures::stream::TryStreamExt as _;
 use measurements::{Frequency, Power};
+use syx::drm::Cache as DrmCard;
 use syx::nvml::Values as Card;
 
+use crate::util::drm::ids_for_driver;
 use crate::util::format::{dot, frequency, power, Table};
 
 fn mhz(v: u32) -> String {
@@ -12,14 +13,14 @@ fn mw(v: u32) -> String {
     power(Power::from_milliwatts(v as f64))
 }
 
-pub(super) async fn tabulate() -> Option<String> {
+pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Option<Vec<String>> {
     log::trace!("nvml tabulate start");
-    let mut cards: Vec<_> = Card::all().try_collect().await.unwrap_or_default();
+    let cards: Vec<_> =
+        ids_for_driver(drm_cards, "nvidia").await.into_iter().map(Card::new).collect();
     if cards.is_empty() {
         log::trace!("nvml tabulate none");
         None
     } else {
-        cards.sort_by_key(|v| v.id());
         let mut tab = Table::new(&[
             "DRM",
             "Driver",
@@ -41,9 +42,8 @@ pub(super) async fn tabulate() -> Option<String> {
                 card.power_min_limit().await.ok().map(mw).unwrap_or_else(dot),
                 card.power_max_limit().await.ok().map(mw).unwrap_or_else(dot),
             ]);
-            tokio::task::yield_now().await;
         }
-        let r = Some(tab.into());
+        let r = Some(vec![tab.into()]);
         log::trace!("nvml tabulate done");
         r
     }

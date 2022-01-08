@@ -6,7 +6,7 @@ use futures::Future;
 pub(crate) struct Drm;
 
 impl Drm {
-    pub(crate) fn tabulate() -> impl Future<Output = Option<String>> {
+    pub(crate) fn tabulate() -> impl Future<Output = Option<Vec<String>>> {
         table::tabulate()
     }
 }

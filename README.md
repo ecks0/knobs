@@ -99,7 +99,7 @@ Set `KNOBS_LOG=trace` to see what's happening under the hood.
 
 Example output:
 
-**i7-1160G7**
+**i7-1160G7** intel_pstate=active
 ```
 $ knobs
  CPU  Online  Governor   Cur      Min      Max      Min lim  Max lim
@@ -140,23 +140,23 @@ $ knobs
  0    i915    100 MHz  350 MHz  100 MHz  1.1 GHz  1.1 GHz  100 MHz  1.1 GHz
 ```
 
-**i7-8700k**
+**i7-8750H** intel_pstate=passive
 ```
 $ knobs
- CPU  Online  Governor     Cur      Min      Max      Min lim  Max lim
- ---  ------  -----------  -------  -------  -------  -------  -------
- 0    •       performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 1    true    performance  4.4 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 2    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 3    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 4    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 5    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 6    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 7    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 8    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 9    true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 10   true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
- 11   true    performance  4.7 GHz  800 MHz  4.7 GHz  800 MHz  4.7 GHz
+ CPU  Online  Governor   Cur      Min      Max      Min lim  Max lim
+ ---  ------  ---------  -------  -------  -------  -------  -------
+ 0    •       schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 1    true    schedutil  2.9 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 2    true    schedutil  1.1 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 3    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 4    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 5    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 6    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 7    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 8    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 9    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 10   true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
+ 11   true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
 
  CPU  Available governors
  ---  ---------------------------------------------------------------
@@ -166,14 +166,23 @@ $ knobs
 
  RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
  ----  ---------  --------  ---------  -----------  ---------  -----
- 0     package-0  95 W      131 W      27983872 μs  2440 μs    6.8 W
- 0:0   dram       0 W       •          976 μs       •          1.4 W
+ 0     package-0  45 W      90 W       27983872 μs  2440 μs    •
+ 0:0   core       0 W       •          976 μs       •          •
+ 0:1   uncore     0 W       •          976 μs       •          •
+ 0:2   dram       0 W       •          976 μs       •          •
+ 1     psys       0 W       0 W        27983872 μs  976 μs     •
 
- DRM  Bus  Bus id
- ---  ---  ------------
- 0    pci  0000:02:00.0
+ DRM  Driver  Bus  Bus id
+ ---  ------  ---  ------------
+ 0    nvidia  pci  0000:01:00.0
+ 1    i915    pci  0000:00:02.0
+
+ DRM  Driver  Actual   Req'd    Min      Max      Boost    Min lim  Max lim
+ ---  ------  -------  -------  -------  -------  -------  -------  -------
+ 1    i915    350 MHz  350 MHz  350 MHz  1.1 GHz  1.1 GHz  350 MHz  1.1 GHz
 
  DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
  ---  ------  -------  -------  ---------  ---------  -------  -------
- 0    nvidia  1.4 GHz  2.2 GHz  43.1 W     260 W      100 W    325 W
+ 0    nvidia  300 MHz  2.1 GHz  7.3 W      •          •        •
+
 ```

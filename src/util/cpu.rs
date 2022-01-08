@@ -9,7 +9,9 @@ use crate::Result;
 pub(crate) async fn ids() -> &'static Vec<u64> {
     static IDS: OnceCell<Vec<u64>> = OnceCell::const_new();
     async fn ids() -> Vec<u64> {
-        syx::cpu::ids().try_collect().await.unwrap_or_default()
+        let mut v: Vec<_> = syx::cpu::ids().try_collect().await.unwrap_or_default();
+        v.sort_unstable();
+        v
     }
     IDS.get_or_init(ids).await
 }
@@ -27,7 +29,7 @@ pub(crate) async fn wait_for_policy() {
 pub(crate) async fn set_online(cpu_ids: Vec<u64>) -> Result<Vec<u64>> {
     let mut onlined = vec![];
     if !cpu_ids.is_empty() {
-        let offline: Vec<_> = syx::cpu::ids_offline().try_collect().await?;
+        let offline: Vec<_> = syx::cpu::offline_ids().try_collect().await?;
         for cpu_id in cpu_ids {
             if offline.contains(&cpu_id) {
                 syx::cpu::set_online(cpu_id, true).await?;
@@ -44,7 +46,7 @@ pub(crate) async fn set_online(cpu_ids: Vec<u64>) -> Result<Vec<u64>> {
 pub(crate) async fn set_offline(cpu_ids: Vec<u64>) -> Result<Vec<u64>> {
     let mut offlined = vec![];
     if !cpu_ids.is_empty() {
-        let online: Vec<_> = syx::cpu::ids_online().try_collect().await?;
+        let online: Vec<_> = syx::cpu::online_ids().try_collect().await?;
         for cpu_id in cpu_ids {
             if online.contains(&cpu_id) {
                 syx::cpu::set_online(cpu_id, false).await?;

@@ -60,7 +60,7 @@ async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     r
 }
 
-pub(super) async fn tabulate() -> Option<String> {
+pub(super) async fn tabulate() -> Option<Vec<String>> {
     log::trace!("rapl tabulate start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
@@ -92,7 +92,7 @@ pub(super) async fn tabulate() -> Option<String> {
                 energy_uj.map(uw).unwrap_or_else(dot),
             ]);
         }
-        let r = Some(tab.into());
+        let r = Some(vec![tab.into()]);
         log::trace!("rapl tabulate start");
         r
     }

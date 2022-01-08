@@ -4,6 +4,7 @@ mod parser;
 use std::io::Write as _;
 use std::iter::once;
 
+use futures::future::join_all;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 
 use crate::cli::group::{Group, Groups};
@@ -34,7 +35,7 @@ fn config_logging() {
                 buf,
                 "{} {} [{:>20}] {}",
                 chrono::Local::now().format("%H:%M:%S%.6f"),
-                record.level().to_string().chars().next().unwrap_or('_'),
+                record.level().to_string().chars().next().unwrap_or('-'),
                 record.target(),
                 record.args()
             )
@@ -127,14 +128,12 @@ async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
         .enumerate()
         .map(Result::Ok)
         .and_then(|(i, (args, argv))| async move {
-            let r = async {
+            async {
                 let parser = Parser::new(args, &argv)?;
-                let r = Group::try_from_ref(&parser).await?;
-                Ok(r)
+                Group::try_from_ref(&parser).await
             }
             .await
-            .map_err(|e| Error::parse_group(e, i + 1))?;
-            Ok(r)
+            .map_err(|e| Error::parse_group(e, i + 1))
         })
         .try_collect()
         .await?;
@@ -177,14 +176,13 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     }
     if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
         tabulators.push(tokio::spawn(Drm::tabulate()));
-        tabulators.push(tokio::spawn(I915::tabulate()));
-        tabulators.push(tokio::spawn(Nvml::tabulate()));
     }
     log::trace!("cli tabulate join");
-    let tables: Vec<_> = futures::future::join_all(tabulators)
+    let tables: Vec<_> = join_all(tabulators)
         .await
         .into_iter()
         .map(|v| v.expect("tabulate future"))
+        .flatten()
         .flatten()
         .collect();
     log::trace!("cli tabulate print");

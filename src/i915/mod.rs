@@ -3,6 +3,7 @@ mod table;
 
 use futures::Future;
 use measurements::Frequency;
+use syx::drm::Cache as Card;
 
 use crate::cli::Arg;
 use crate::Result;
@@ -47,7 +48,7 @@ impl I915 {
         Ok(())
     }
 
-    pub(crate) fn tabulate() -> impl Future<Output = Option<String>> {
-        table::tabulate()
+    pub(crate) fn tabulate(drm_cards: Vec<Card>) -> impl Future<Output = Option<Vec<String>>> {
+        table::tabulate(drm_cards)
     }
 }

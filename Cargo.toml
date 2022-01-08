@@ -19,8 +19,9 @@ regex = "~1.5"
 thiserror = "~1.0"
 
 [dependencies.syx]
-git = "https://github.com/ecks0/syx"
-rev = "v0.6.0"
+#git = "https://github.com/ecks0/syx"
+#rev = "v0.6.0"
+path = "/home/user/src/syx"
 features = ["logging", "nvml"]
 
 [dependencies.tokio]
