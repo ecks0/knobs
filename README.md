@@ -53,6 +53,13 @@ OPTIONS:
     -h, --help                     Print help information
 ```
 
+## Backwards Compatibility
+
+CLI flags may change as I gain access to more hardware, especially AMD and
+ARM devices. The current flags are short and simple, which is good, but they
+may be too general to accomodate a broad range of cpu platforms and features.
+Eventually there will be a 1.0 release, after which flags will never change.
+
 ## Running
 
 Knobs may be called with multiple groups of arguments. Argument groups
