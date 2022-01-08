@@ -188,11 +188,11 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
         .collect();
     log::trace!("cli tabulate print");
     if tables.is_empty() {
-        eprint("No supported devices were found", true).await;
+        eprint("No supported devices were found", true, true).await;
     } else {
         let end = tables.len() - 1;
         for (i, table) in tables.into_iter().enumerate() {
-            print(&table, i != end).await;
+            print(&table, i != end, i == end).await;
         }
     }
     log::trace!("cli tabulate done");
@@ -221,15 +221,15 @@ pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
                     e.kind,
                     ClapErrorKind::DisplayHelp | ClapErrorKind::DisplayVersion
                 ) {
-                    print(&e.to_string(), false).await;
+                    print(&e.to_string(), false, true).await;
                     std::process::exit(0);
                 } else {
-                    eprint(&e.to_string(), true).await;
+                    eprint(&e.to_string(), true, true).await;
                     std::process::exit(1);
                 }
             },
             _ => {
-                eprint(&e.to_string(), true).await;
+                eprint(&e.to_string(), true, true).await;
                 std::process::exit(2);
             },
         }
