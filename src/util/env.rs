@@ -11,5 +11,5 @@ pub(crate) fn var(name: &str) -> Option<String> {
 }
 
 pub(crate) fn parse<T: FromStr>(name: &str) -> Option<T> {
-    var(name).and_then(|v| v.parse::<T>().ok())
+    var(name).and_then(|v| T::from_str(&v).ok())
 }

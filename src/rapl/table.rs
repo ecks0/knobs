@@ -43,7 +43,7 @@ async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Opt
             return (zone, Some(v));
         }
     }
-    //log::trace!("rapl energy_uj done 2");
+    //log::trace!("rapl energy_uj done");
     (zone, None)
 }
 
@@ -51,11 +51,11 @@ async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     const INTERVAL_MS: u64 = 200;
 
     log::trace!("rapl energy_ujs start");
-    let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).min(1000);
+    let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
     let f = zones.iter().map(|v| tokio::spawn(energy_uj(v.id(), interval, scale)));
-    let r = try_join_all(f).await.expect("rapl energy_uj future");
+    let r = try_join_all(f).await.expect("rapl energy_uj futures");
     log::trace!("rapl energy_ujs done");
     r
 }
