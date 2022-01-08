@@ -15,7 +15,7 @@ Run with `-h` for short help or `--help` for long help.
 
 Short help:
 ```
-knobs 0.5.1
+knobs 0.5.3
 
 USAGE:
     knobs [OPTIONS] [-- <ARGS>...]
@@ -33,7 +33,7 @@ OPTIONS:
     -g, --cpu-gov <STR>            Set cpu governor
     -n, --cpu-min <INT>            Set cpu min freq in megahertz
     -x, --cpu-max <INT>            Set cpu max freq in megahertz
-        --cpu-epb <0..=15>         Set cpu epb
+        --cpu-epb <INT>            Set cpu epb
         --cpu-epp <STR>            Set cpu epp
     -P, --rapl-package <INT>       Target rapl package
     -S, --rapl-subzone <INT>       Target rapl subzone
@@ -47,7 +47,9 @@ OPTIONS:
         --nvml <IDS>               Target nvml drm card indexes or bus ids
         --nvml-gpu-min <INT>       Set nvml min gpu freq in megahertz
         --nvml-gpu-max <INT>       Set nvml max gpu freq in megahertz
+        --nvml-gpu-reset           Reset nvml gpu freq to default
         --nvml-power <FLOAT>       Set nvml device power limit in watts
+        --nvml-power-reset         Reset nvml power limit to default
     -h, --help                     Print help information
 ```
 
