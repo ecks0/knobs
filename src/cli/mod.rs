@@ -5,16 +5,17 @@ use std::io::Write as _;
 use std::iter::once;
 
 use clap::ErrorKind as ClapErrorKind;
-use futures::future::join_all;
+use futures::future::try_join_all;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 
 use crate::cli::group::{Group, Groups};
 pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
 use crate::util::convert::*;
+use crate::util::env::var_name;
 use crate::util::io::{eprint, print};
 use crate::{Cpu, Drm, Error, Nvml, Rapl, Result, I915};
 
-const ARGV0: &str = "knobs";
+pub(crate) const ARGV0: &str = "knobs";
 
 const QUIET: &str = "quiet";
 const SHOW_CPU: &str = "show-cpu";
@@ -26,10 +27,9 @@ const QUIET_SHORT: char = 'q';
 const GROUP_SEP: &str = "--";
 
 fn config_logging() {
-    let name = ARGV0.to_ascii_uppercase();
     let env = env_logger::Env::default()
-        .filter_or(format!("{}_LOG", name), "error")
-        .write_style_or(format!("{}_LOG_STYLE", name), "never");
+        .filter_or(var_name("LOG"), "error")
+        .write_style_or(var_name("LOG_STYLE"), "never");
     env_logger::Builder::from_env(env)
         .format(|buf, record| {
             writeln!(
@@ -179,10 +179,10 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
         tabulators.push(tokio::spawn(Drm::tabulate()));
     }
     log::trace!("cli tabulate join");
-    let tables: Vec<_> = join_all(tabulators)
+    let tables: Vec<_> = try_join_all(tabulators)
         .await
+        .expect("tabulate futures")
         .into_iter()
-        .map(|v| v.expect("tabulate future"))
         .flatten()
         .flatten()
         .collect();

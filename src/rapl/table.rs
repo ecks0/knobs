@@ -7,6 +7,7 @@ use syx::intel_rapl::constraint::{Values as Constraint, LONG_TERM, SHORT_TERM};
 use syx::intel_rapl::zone::{self, Id as ZoneId, Values as Zone};
 use tokio::time::sleep;
 
+use crate::util::env;
 use crate::util::format::{dot, power, Table};
 
 fn uw(v: u64) -> String {
@@ -33,29 +34,28 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
     }
 }
 
-async fn energy_uj(zone: ZoneId) -> (ZoneId, Option<u64>) {
-    const INTERVAL: Duration = Duration::from_millis(200);
-    const SCALE: u64 = 1000 / INTERVAL.as_millis() as u64;
-
-    log::trace!("rapl energy_uj start");
+async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Option<u64>) {
+    //log::trace!("rapl energy_uj start");
     if let Ok(a) = zone::energy_uj(zone).await {
-        sleep(INTERVAL).await;
+        sleep(interval).await;
         if let Ok(b) = zone::energy_uj(zone).await {
-            let v = b - a;
-            let v = v * SCALE;
-            log::trace!("rapl energy_uj done");
+            let v = ((b - a) as f64 * scale).trunc() as u64;
             return (zone, Some(v));
         }
     }
-    log::trace!("rapl energy_uj done 2");
+    //log::trace!("rapl energy_uj done 2");
     (zone, None)
 }
 
 async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
+    const INTERVAL_MS: u64 = 200;
+
     log::trace!("rapl energy_ujs start");
-    let f = zones.iter().map(|v| energy_uj(v.id()));
-    let f: Vec<_> = f.map(tokio::spawn).collect();
-    let r = try_join_all(f).await.expect("join rapl energy_uj sampler tasks");
+    let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).min(1000);
+    let scale = 1000. / interval as f64;
+    let interval = Duration::from_millis(interval);
+    let f = zones.iter().map(|v| tokio::spawn(energy_uj(v.id(), interval, scale)));
+    let r = try_join_all(f).await.expect("rapl energy_uj future");
     log::trace!("rapl energy_ujs done");
     r
 }

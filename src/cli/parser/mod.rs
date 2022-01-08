@@ -73,7 +73,6 @@ impl Parser {
             .color(clap::ColorChoice::Never)
             .setting(clap::AppSettings::DeriveDisplayOrder)
             .setting(clap::AppSettings::DisableHelpSubcommand)
-            //.setting(clap::AppSettings::DisableVersionFlag)
             .setting(clap::AppSettings::TrailingVarArg)
             .version(clap::crate_version!())
             .args(&clap_args)
@@ -161,10 +160,6 @@ impl Parser {
             .transpose()
             .map_err(|e| Error::parse_flag(e, name))?
             .map(Into::into))
-    }
-
-    pub(crate) fn pstate_epb(&self, name: &str) -> Result<Option<u64>> {
-        self.int(name)
     }
 
     pub(crate) async fn rapl_constraint(

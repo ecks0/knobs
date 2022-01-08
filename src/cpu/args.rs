@@ -30,7 +30,7 @@ impl TryFromRef<Parser> for super::Cpu {
             cpu_gov: p.string(CPU_GOV),
             cpu_min: p.megahertz(CPU_MIN)?,
             cpu_max: p.megahertz(CPU_MAX)?,
-            cpu_epb: p.pstate_epb(CPU_EPB)?,
+            cpu_epb: p.int(CPU_EPB)?,
             cpu_epp: p.string(CPU_EPP),
         };
         log::trace!("cpu parse done");

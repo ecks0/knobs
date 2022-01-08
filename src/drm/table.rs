@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use futures::future::join_all;
+use futures::future::try_join_all;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 use syx::drm::Cache as Card;
 
@@ -62,10 +62,10 @@ pub(super) async fn tabulate() -> Option<Vec<String>> {
                 };
                 tabulators.push(t);
             });
-        let tables: Vec<_> = join_all(tabulators)
+        let tables: Vec<_> = try_join_all(tabulators)
             .await
+            .expect("drm tabulate futures")
             .into_iter()
-            .map(|v| v.expect("drm tabulate future"))
             .flatten()
             .flatten()
             .collect();

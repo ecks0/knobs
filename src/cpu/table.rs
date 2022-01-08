@@ -1,3 +1,4 @@
+use futures::future::try_join_all;
 use futures::stream::{self, StreamExt as _};
 use measurements::Frequency;
 use syx::cpu::Values as Cpu;
@@ -203,10 +204,10 @@ pub(super) async fn tabulate() -> Option<Vec<String>> {
         tokio::spawn(epps(system, pstates)),
     ];
     log::trace!("cpu tabulate join");
-    let tables: Vec<_> = futures::future::join_all(tabulators)
+    let tables: Vec<_> = try_join_all(tabulators)
         .await
+        .expect("cpu tabulate futures")
         .into_iter()
-        .map(|v| v.expect("cpu tabulate future"))
         .flatten()
         .collect();
     let r = if tables.is_empty() { None } else { Some(tables) };
