@@ -3,8 +3,8 @@ name = "knobs"
 version = "0.5.3"
 edition = "2021"
 homepage = "https://github.com/ecks0/knobs"
-license = "MIT"
 authors = ["eckso <eckso@eckso.io>"]
+license = "AGPL-3.0"
 
 [dependencies]
 async-trait = "~0.1"
