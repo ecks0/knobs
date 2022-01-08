@@ -99,7 +99,52 @@ Set `KNOBS_LOG=trace` to see what's happening under the hood.
 
 Example output:
 
-**i7-1160G7** intel_pstate=active
+**i7-8750H**
+```
+ CPU  Online  Governor     Cur      Min      Max      Min lim  Max lim
+ ---  ------  -----------  -------  -------  -------  -------  -------
+ 0    •       performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 1    true    performance  4.0 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 2    true    performance  4.0 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 3    true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 4    true    performance  3.5 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 5    true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 6    true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 7    true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 8    true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 9    true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 10   true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+ 11   true    performance  3.9 GHz  800 MHz  4.1 GHz  800 MHz  4.1 GHz
+
+ CPU  Available governors
+ ---  ---------------------------------------------------------------
+ all  conservative ondemand userspace powersave performance schedutil
+
+ intel_pstate: passive
+
+ RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
+ ----  ---------  --------  ---------  -----------  ---------  -----
+ 0     package-0  45 W      90 W       27983872 μs  2440 μs    8.0 W
+ 0:0   core       0 W       •          976 μs       •          4.8 W
+ 0:1   uncore     0 W       •          976 μs       •          0 W
+ 0:2   dram       0 W       •          976 μs       •          1.4 W
+ 1     psys       0 W       0 W        27983872 μs  976 μs     2.2 W
+
+ DRM  Driver  Bus  Bus id
+ ---  ------  ---  ------------
+ 0    nvidia  pci  0000:01:00.0
+ 1    i915    pci  0000:00:02.0
+
+ DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
+ ---  ------  -------  -------  ---------  ---------  -------  -------
+ 0    nvidia  360 MHz  2.1 GHz  7.8 W      •          •        •
+
+ DRM  Driver  Actual   Req'd    Min      Max      Boost    Min lim  Max lim
+ ---  ------  -------  -------  -------  -------  -------  -------  -------
+ 1    i915    350 MHz  350 MHz  350 MHz  1.1 GHz  1.1 GHz  350 MHz  1.1 GHz
+```
+
+**i7-1160G7**
 ```
 $ knobs
  CPU  Online  Governor   Cur      Min      Max      Min lim  Max lim
@@ -138,51 +183,4 @@ $ knobs
  DRM  Driver  Actual   Req'd    Min      Max      Boost    Min lim  Max lim
  ---  ------  -------  -------  -------  -------  -------  -------  -------
  0    i915    100 MHz  350 MHz  100 MHz  1.1 GHz  1.1 GHz  100 MHz  1.1 GHz
-```
-
-**i7-8750H** intel_pstate=passive
-```
-$ knobs
- CPU  Online  Governor   Cur      Min      Max      Min lim  Max lim
- ---  ------  ---------  -------  -------  -------  -------  -------
- 0    •       schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 1    true    schedutil  2.9 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 2    true    schedutil  1.1 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 3    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 4    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 5    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 6    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 7    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 8    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 9    true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 10   true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
- 11   true    schedutil  3.0 GHz  800 MHz  3.0 GHz  800 MHz  4.1 GHz
-
- CPU  Available governors
- ---  ---------------------------------------------------------------
- all  conservative ondemand userspace powersave performance schedutil
-
- intel_pstate: passive
-
- RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
- ----  ---------  --------  ---------  -----------  ---------  -----
- 0     package-0  45 W      90 W       27983872 μs  2440 μs    •
- 0:0   core       0 W       •          976 μs       •          •
- 0:1   uncore     0 W       •          976 μs       •          •
- 0:2   dram       0 W       •          976 μs       •          •
- 1     psys       0 W       0 W        27983872 μs  976 μs     •
-
- DRM  Driver  Bus  Bus id
- ---  ------  ---  ------------
- 0    nvidia  pci  0000:01:00.0
- 1    i915    pci  0000:00:02.0
-
- DRM  Driver  Actual   Req'd    Min      Max      Boost    Min lim  Max lim
- ---  ------  -------  -------  -------  -------  -------  -------  -------
- 1    i915    350 MHz  350 MHz  350 MHz  1.1 GHz  1.1 GHz  350 MHz  1.1 GHz
-
- DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
- ---  ------  -------  -------  ---------  ---------  -------  -------
- 0    nvidia  300 MHz  2.1 GHz  7.3 W      •          •        •
-
 ```
