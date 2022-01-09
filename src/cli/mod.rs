@@ -6,7 +6,7 @@ use std::iter::once;
 
 use clap::ErrorKind as ClapErrorKind;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
-use tokio::io::{stderr, stdout, AsyncWriteExt as _};
+use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
 
 use crate::cli::group::{Group, Groups};
 pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
@@ -177,7 +177,7 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
         tabulators.extend(Drm::tabulate().await);
     }
-    let mut stdout = stdout();
+    let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
     let mut ok = false;
     log::trace!("cli tabulate print");
     for tabulator in tabulators {
@@ -188,11 +188,12 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
                 ok = true;
             }
             stdout.write_all(table.as_bytes()).await.unwrap();
-            stdout.flush().await.unwrap();
             log::trace!("cli tabulate print table");
         }
     }
-    if !ok {
+    if ok {
+        stdout.flush().await.unwrap();
+    } else {
         let mut stderr = stderr();
         stderr.write_all("No supported devices were found\n".as_bytes()).await.unwrap();
         stderr.flush().await.unwrap();

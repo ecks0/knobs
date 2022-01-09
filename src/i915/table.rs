@@ -11,12 +11,12 @@ fn mhz(v: u64) -> String {
     frequency(Frequency::from_megahertz(v as f64))
 }
 
-async fn render(drm_cards: Vec<DrmCard>) -> Option<String> {
-    log::trace!("i915 tabulate start");
+async fn table(drm_cards: Vec<DrmCard>) -> Option<String> {
+    log::trace!("i915 tabulate table start");
     let cards: Vec<_> =
         ids_for_driver(drm_cards, "i915").await.into_iter().map(Card::new).collect();
     if cards.is_empty() {
-        log::trace!("i915 tabulate none");
+        log::trace!("i915 tabulate table none");
         None
     } else {
         let mut tab = Table::new(&[
@@ -36,11 +36,11 @@ async fn render(drm_cards: Vec<DrmCard>) -> Option<String> {
             ]);
         }
         let r = Some(tab.into());
-        log::trace!("i915 tabulate done");
+        log::trace!("i915 tabulate table done");
         r
     }
 }
 
 pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
-    vec![spawn(render(drm_cards))]
+    vec![spawn(table(drm_cards))]
 }

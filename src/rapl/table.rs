@@ -20,7 +20,7 @@ fn us(v: u64) -> String {
     format!("{} μs", v)
 }
 
-fn format_zone_id(v: ZoneId) -> String {
+fn zone_id(v: ZoneId) -> String {
     if let Some(subzone) = v.subzone() {
         format!("{}:{}", v.package(), subzone)
     } else {
@@ -37,7 +37,7 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
 }
 
 async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Option<u64>) {
-    //log::trace!("rapl energy_uj start");
+    //log::trace!("rapl tabulate energy_uj start");
     if let Ok(a) = zone::energy_uj(zone).await {
         sleep(interval).await;
         if let Ok(b) = zone::energy_uj(zone).await {
@@ -45,28 +45,28 @@ async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Opt
             return (zone, Some(v));
         }
     }
-    //log::trace!("rapl energy_uj done");
+    //log::trace!("rapl tabulate energy_uj done");
     (zone, None)
 }
 
 async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     const INTERVAL_MS: u64 = 200;
 
-    log::trace!("rapl energy_ujs start");
+    log::trace!("rapl tabulate energy_ujs start");
     let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
     let f = zones.iter().map(|v| spawn(energy_uj(v.id(), interval, scale)));
-    let r = try_join_all(f).await.expect("rapl energy_uj futures");
-    log::trace!("rapl energy_ujs done");
+    let r = try_join_all(f).await.expect("rapl tabulate energy_ujs futures");
+    log::trace!("rapl tabulate energy_ujs done");
     r
 }
 
-pub(super) async fn render() -> Option<String> {
-    log::trace!("rapl tabulate start");
+pub(super) async fn table() -> Option<String> {
+    log::trace!("rapl tabulate table start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
-        log::trace!("rapl tabulate none");
+        log::trace!("rapl tabulate table none");
         None
     } else {
         zones.sort_by_key(|v| v.id());
@@ -85,7 +85,7 @@ pub(super) async fn render() -> Option<String> {
             let (short_lim, short_win) = limit_window(&zone, SHORT_TERM).await;
             let energy_uj = energy_ujs.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
             tab.row(&[
-                format_zone_id(zone.id()),
+                zone_id(zone.id()),
                 zone.name().await.ok().unwrap_or_else(dot),
                 long_lim.map(uw).unwrap_or_else(dot),
                 short_lim.map(uw).unwrap_or_else(dot),
@@ -95,11 +95,11 @@ pub(super) async fn render() -> Option<String> {
             ]);
         }
         let r = Some(tab.into());
-        log::trace!("rapl tabulate start");
+        log::trace!("rapl tabulate table done");
         r
     }
 }
 
 pub(super) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
-    vec![spawn(render())]
+    vec![spawn(table())]
 }

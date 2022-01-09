@@ -14,14 +14,14 @@ impl TryFromRef<Parser> for super::I915 {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser) -> Result<Self> {
-        log::trace!("i915 parse start");
+        //log::trace!("i915 parse start");
         let r = Self {
             i915: p.drm_ids::<I915Driver>(I915).await?,
             i915_min: p.megahertz(I915_MIN)?,
             i915_max: p.megahertz(I915_MAX)?,
             i915_boost: p.megahertz(I915_BOOST)?,
         };
-        log::trace!("i915 parse done");
+        //log::trace!("i915 parse done");
         Ok(r)
     }
 }

@@ -16,7 +16,7 @@ impl TryFromRef<Parser> for super::Nvml {
     type Error = Error;
 
     async fn try_from_ref(p: &Parser) -> Result<Self> {
-        log::trace!("nvml parse start");
+        //log::trace!("nvml parse start");
         let r = Self {
             nvml: p.drm_ids::<NvmlDriver>(NVML).await?,
             nvml_gpu_min: p.megahertz(NVML_GPU_MIN)?,
@@ -25,7 +25,7 @@ impl TryFromRef<Parser> for super::Nvml {
             nvml_power: p.watts(NVML_POWER)?,
             nvml_power_reset: p.flag(NVML_POWER_RESET),
         };
-        log::trace!("nvml parse done");
+        //log::trace!("nvml parse done");
         Ok(r)
     }
 }

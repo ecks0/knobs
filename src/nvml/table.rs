@@ -15,12 +15,12 @@ fn mw(v: u32) -> String {
     power(Power::from_milliwatts(v as f64))
 }
 
-pub(super) async fn render(drm_cards: Vec<DrmCard>) -> Option<String> {
-    log::trace!("nvml tabulate start");
+pub(super) async fn table(drm_cards: Vec<DrmCard>) -> Option<String> {
+    log::trace!("nvml tabulate table start");
     let cards: Vec<_> =
         ids_for_driver(drm_cards, "nvidia").await.into_iter().map(Card::new).collect();
     if cards.is_empty() {
-        log::trace!("nvml tabulate none");
+        log::trace!("nvml tabulate table none");
         None
     } else {
         let mut tab = Table::new(&[
@@ -46,11 +46,11 @@ pub(super) async fn render(drm_cards: Vec<DrmCard>) -> Option<String> {
             ]);
         }
         let r = Some(tab.into());
-        log::trace!("nvml tabulate done");
+        log::trace!("nvml tabulate table done");
         r
     }
 }
 
 pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
-    vec![spawn(render(drm_cards))]
+    vec![spawn(table(drm_cards))]
 }
