@@ -1,6 +1,8 @@
 use measurements::{Frequency, Power};
 use syx::drm::Cache as DrmCard;
 use syx::nvml::Values as Card;
+use tokio::spawn;
+use tokio::task::JoinHandle;
 
 use crate::util::drm::ids_for_driver;
 use crate::util::format::{dot, frequency, power, Table};
@@ -13,7 +15,7 @@ fn mw(v: u32) -> String {
     power(Power::from_milliwatts(v as f64))
 }
 
-pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Option<Vec<String>> {
+pub(super) async fn render(drm_cards: Vec<DrmCard>) -> Option<String> {
     log::trace!("nvml tabulate start");
     let cards: Vec<_> =
         ids_for_driver(drm_cards, "nvidia").await.into_iter().map(Card::new).collect();
@@ -43,8 +45,12 @@ pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Option<Vec<String>> {
                 card.power_max_limit().await.ok().map(mw).unwrap_or_else(dot),
             ]);
         }
-        let r = Some(vec![tab.into()]);
+        let r = Some(tab.into());
         log::trace!("nvml tabulate done");
         r
     }
+}
+
+pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
+    vec![spawn(render(drm_cards))]
 }

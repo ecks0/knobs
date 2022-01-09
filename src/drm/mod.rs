@@ -1,12 +1,12 @@
 mod table;
 
-use futures::Future;
+use tokio::task::JoinHandle;
 
 #[derive(Debug)]
 pub(crate) struct Drm;
 
 impl Drm {
-    pub(crate) fn tabulate() -> impl Future<Output = Option<Vec<String>>> {
-        table::tabulate()
+    pub(crate) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
+        table::tabulate().await
     }
 }

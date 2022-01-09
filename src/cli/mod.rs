@@ -5,14 +5,13 @@ use std::io::Write as _;
 use std::iter::once;
 
 use clap::ErrorKind as ClapErrorKind;
-use futures::future::try_join_all;
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
+use tokio::io::{stderr, stdout, AsyncWriteExt as _};
 
 use crate::cli::group::{Group, Groups};
 pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
 use crate::util::convert::*;
 use crate::util::env::var_name;
-use crate::util::io::{eprint, print};
 use crate::{Cpu, Drm, Error, Nvml, Rapl, Result, I915};
 
 pub(crate) const ARGV0: &str = "knobs";
@@ -127,7 +126,7 @@ async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
     let groups = argvs.into_iter().map(|argv| (&args, argv));
     let groups: Vec<_> = stream::iter(groups)
         .enumerate()
-        .map(Result::Ok)
+        .map(Ok)
         .and_then(|(i, (args, argv))| async move {
             async {
                 let parser = Parser::new(args, &argv)?;
@@ -170,30 +169,33 @@ async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
     log::trace!("cli tabulate spawn");
     let mut tabulators = vec![];
     if (!has_vals && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
-        tabulators.push(tokio::spawn(Cpu::tabulate()));
+        tabulators.extend(Cpu::tabulate().await);
     }
     if (!has_vals && !has_show_flags) || (has_rapl_vals && !has_show_flags) || show_rapl {
-        tabulators.push(tokio::spawn(Rapl::tabulate()));
+        tabulators.extend(Rapl::tabulate().await);
     }
     if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
-        tabulators.push(tokio::spawn(Drm::tabulate()));
+        tabulators.extend(Drm::tabulate().await);
     }
-    log::trace!("cli tabulate join");
-    let tables: Vec<_> = try_join_all(tabulators)
-        .await
-        .expect("tabulate futures")
-        .into_iter()
-        .flatten()
-        .flatten()
-        .collect();
+    let mut stdout = stdout();
+    let mut ok = false;
     log::trace!("cli tabulate print");
-    if tables.is_empty() {
-        eprint("No supported devices were found", true, true).await;
-    } else {
-        let end = tables.len() - 1;
-        for (i, table) in tables.into_iter().enumerate() {
-            print(&table, i != end, i == end).await;
+    for tabulator in tabulators {
+        if let Some(table) = tabulator.await.expect("cli tabulate future") {
+            if ok {
+                stdout.write_all("\n".as_bytes()).await.unwrap();
+            } else {
+                ok = true;
+            }
+            stdout.write_all(table.as_bytes()).await.unwrap();
+            stdout.flush().await.unwrap();
+            log::trace!("cli tabulate print table");
         }
+    }
+    if !ok {
+        let mut stderr = stderr();
+        stderr.write_all("No supported devices were found\n".as_bytes()).await.unwrap();
+        stderr.flush().await.unwrap();
     }
     log::trace!("cli tabulate done");
     Ok(())
@@ -221,15 +223,23 @@ pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
                     e.kind,
                     ClapErrorKind::DisplayHelp | ClapErrorKind::DisplayVersion
                 ) {
-                    print(&e.to_string(), false, true).await;
+                    let mut stdout = stdout();
+                    stdout.write_all(e.to_string().as_bytes()).await.unwrap();
+                    stdout.flush().await.unwrap();
                     std::process::exit(0);
                 } else {
-                    eprint(&e.to_string(), true, true).await;
+                    let mut stderr = stderr();
+                    stderr.write_all(e.to_string().as_bytes()).await.unwrap();
+                    stderr.write_all("\n".as_bytes()).await.unwrap();
+                    stderr.flush().await.unwrap();
                     std::process::exit(1);
                 }
             },
             _ => {
-                eprint(&e.to_string(), true, true).await;
+                let mut stderr = stderr();
+                stderr.write_all(e.to_string().as_bytes()).await.unwrap();
+                stderr.write_all("\n".as_bytes()).await.unwrap();
+                stderr.flush().await.unwrap();
                 std::process::exit(2);
             },
         }

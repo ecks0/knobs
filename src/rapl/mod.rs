@@ -3,8 +3,8 @@ mod table;
 
 use std::time::Duration;
 
-use futures::Future;
 use measurements::Power;
+use tokio::task::JoinHandle;
 
 use crate::cli::Arg;
 use crate::Result;
@@ -41,7 +41,7 @@ impl Rapl {
         Ok(())
     }
 
-    pub(crate) fn tabulate() -> impl Future<Output = Option<Vec<String>>> {
-        table::tabulate()
+    pub(crate) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
+        table::tabulate().await
     }
 }

@@ -1,10 +1,11 @@
-use futures::future::try_join_all;
 use futures::stream::{self, StreamExt as _};
 use measurements::Frequency;
 use syx::cpu::Values as Cpu;
 use syx::cpufreq::Values as Cpufreq;
 use syx::intel_pstate::policy::Values as PstatePolicy;
 use syx::intel_pstate::system::Cache as PstateSystem;
+use tokio::spawn;
+use tokio::task::JoinHandle;
 
 use crate::util;
 use crate::util::format::{dot, frequency, Table, DOT};
@@ -14,9 +15,9 @@ fn khz(v: u64) -> String {
 }
 
 async fn cpu_cpufreq(cpus: Vec<Cpu>, cpufreqs: Vec<Cpufreq>) -> Option<String> {
-    log::trace!("cpu cpu_cpufreq start");
+    log::trace!("cpu tabulate cpu_cpufreq start");
     if cpus.is_empty() {
-        log::trace!("cpu cpu_cpufreq none");
+        log::trace!("cpu tabulate cpu_cpufreq none");
         None
     } else {
         let mut tab = Table::new(&[
@@ -42,15 +43,15 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, cpufreqs: Vec<Cpufreq>) -> Option<String> {
             tab.row(&row);
         }
         let r = Some(tab.into());
-        log::trace!("cpu cpu_cpufreq done");
+        log::trace!("cpu tabulate cpu_cpufreq done");
         r
     }
 }
 
 async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
-    log::trace!("cpu governors start");
+    log::trace!("cpu tabulate governors start");
     if cpufreqs.is_empty() {
-        log::trace!("cpu governors none");
+        log::trace!("cpu tabulate governors none");
         None
     } else {
         let values: Vec<_> = stream::iter(cpufreqs.iter())
@@ -82,30 +83,30 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
                 }
             }
             let r = Some(tab.into());
-            log::trace!("cpu governors done");
+            log::trace!("cpu tabulate governors done");
             r
         }
     }
 }
 
 async fn pstate_status(system: PstateSystem) -> Option<String> {
-    log::trace!("cpu pstate_status start");
+    log::trace!("cpu tabulate pstate_status start");
     if system.is_active().await.unwrap_or(false) {
-        log::trace!("cpu pstate_status none");
+        log::trace!("cpu tabulate pstate_status none");
         None
     } else {
         // Print the status when not active so that the user
         // knows why they're not seeing the epb/epp tables.
         let r = system.status().await.ok().map(|v| format!(" intel_pstate: {}\n", v));
-        log::trace!("cpu pstate_status done");
+        log::trace!("cpu tabulate pstate_status done");
         r
     }
 }
 
 async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String> {
-    log::trace!("cpu epb_epp start");
+    log::trace!("cpu tabulate epb_epp start");
     if pstates.is_empty() || !system.is_active().await.ok().unwrap_or(false) {
-        log::trace!("cpu epb_epp none");
+        log::trace!("cpu tabulate epb_epp none");
         None
     } else {
         let values: Vec<_> = stream::iter(pstates.iter())
@@ -128,7 +129,7 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
         epb_epp.sort_unstable();
         epb_epp.dedup();
         if epb_epp.is_empty() || (epb_epp.len() == 1 && epb_epp[0] == (DOT, DOT)) {
-            log::trace!("cpu epb_epp none 2");
+            log::trace!("cpu tabulate epb_epp none 2");
             None
         } else {
             let mut tab = Table::new(&["CPU", "EP bias", "EP preference"]);
@@ -141,16 +142,16 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
                 }
             }
             let r = Some(tab.into());
-            log::trace!("cpu epb_epp done");
+            log::trace!("cpu tabulate epb_epp done");
             r
         }
     }
 }
 
 async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String> {
-    log::trace!("cpu epps start");
+    log::trace!("cpu tabulate epps start");
     if pstates.is_empty() || !system.is_active().await.ok().unwrap_or(false) {
-        log::trace!("cpu epps none");
+        log::trace!("cpu tabulate epps none");
         None
     } else {
         let values: Vec<_> = stream::iter(pstates.iter())
@@ -170,7 +171,7 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
         epps.sort_unstable();
         epps.dedup();
         if epps.is_empty() || (epps.len() == 1 && epps[0] == DOT) {
-            log::trace!("cpu epps none 2");
+            log::trace!("cpu tabulate epps none 2");
             None
         } else {
             let mut tab = Table::new(&["CPU", "Available EP preferences"]);
@@ -182,13 +183,13 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
                 }
             }
             let r = Some(tab.into());
-            log::trace!("cpu epps done");
+            log::trace!("cpu tabulate epps done");
             r
         }
     }
 }
 
-pub(super) async fn tabulate() -> Option<Vec<String>> {
+pub(super) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
     log::trace!("cpu tabulate start");
     let ids = util::cpu::ids().await.clone();
     let cpus: Vec<_> = ids.clone().into_iter().map(Cpu::new).collect();
@@ -196,21 +197,13 @@ pub(super) async fn tabulate() -> Option<Vec<String>> {
     let pstates: Vec<_> = ids.into_iter().map(PstatePolicy::new).collect();
     let system = PstateSystem::default();
     log::trace!("cpu tabulate spawn");
-    let tabulators = vec![
-        tokio::spawn(cpu_cpufreq(cpus, cpufreqs.clone())),
-        tokio::spawn(governors(cpufreqs)),
-        tokio::spawn(pstate_status(system.clone())),
-        tokio::spawn(epb_epp(system.clone(), pstates.clone())),
-        tokio::spawn(epps(system, pstates)),
+    let r = vec![
+        spawn(cpu_cpufreq(cpus, cpufreqs.clone())),
+        spawn(governors(cpufreqs)),
+        spawn(pstate_status(system.clone())),
+        spawn(epb_epp(system.clone(), pstates.clone())),
+        spawn(epps(system, pstates)),
     ];
-    log::trace!("cpu tabulate join");
-    let tables: Vec<_> = try_join_all(tabulators)
-        .await
-        .expect("cpu tabulate futures")
-        .into_iter()
-        .flatten()
-        .collect();
-    let r = if tables.is_empty() { None } else { Some(tables) };
     log::trace!("cpu tabulate done");
     r
 }

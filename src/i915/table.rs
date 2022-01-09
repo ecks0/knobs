@@ -1,6 +1,8 @@
 use measurements::Frequency;
 use syx::drm::Cache as DrmCard;
 use syx::i915::Values as Card;
+use tokio::spawn;
+use tokio::task::JoinHandle;
 
 use crate::util::drm::ids_for_driver;
 use crate::util::format::{dot, frequency, Table};
@@ -9,7 +11,7 @@ fn mhz(v: u64) -> String {
     frequency(Frequency::from_megahertz(v as f64))
 }
 
-pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Option<Vec<String>> {
+async fn render(drm_cards: Vec<DrmCard>) -> Option<String> {
     log::trace!("i915 tabulate start");
     let cards: Vec<_> =
         ids_for_driver(drm_cards, "i915").await.into_iter().map(Card::new).collect();
@@ -33,8 +35,12 @@ pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Option<Vec<String>> {
                 card.rp0_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
             ]);
         }
-        let r = Some(vec![tab.into()]);
+        let r = Some(tab.into());
         log::trace!("i915 tabulate done");
         r
     }
+}
+
+pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
+    vec![spawn(render(drm_cards))]
 }

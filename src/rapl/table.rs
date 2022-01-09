@@ -5,6 +5,8 @@ use futures::stream::TryStreamExt as _;
 use measurements::Power;
 use syx::intel_rapl::constraint::{Values as Constraint, LONG_TERM, SHORT_TERM};
 use syx::intel_rapl::zone::{self, Id as ZoneId, Values as Zone};
+use tokio::spawn;
+use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
 use crate::util::env;
@@ -54,13 +56,13 @@ async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
-    let f = zones.iter().map(|v| tokio::spawn(energy_uj(v.id(), interval, scale)));
+    let f = zones.iter().map(|v| spawn(energy_uj(v.id(), interval, scale)));
     let r = try_join_all(f).await.expect("rapl energy_uj futures");
     log::trace!("rapl energy_ujs done");
     r
 }
 
-pub(super) async fn tabulate() -> Option<Vec<String>> {
+pub(super) async fn render() -> Option<String> {
     log::trace!("rapl tabulate start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
@@ -92,8 +94,12 @@ pub(super) async fn tabulate() -> Option<Vec<String>> {
                 energy_uj.map(uw).unwrap_or_else(dot),
             ]);
         }
-        let r = Some(vec![tab.into()]);
+        let r = Some(tab.into());
         log::trace!("rapl tabulate start");
         r
     }
+}
+
+pub(super) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
+    vec![spawn(render())]
 }

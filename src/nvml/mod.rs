@@ -1,9 +1,9 @@
 mod args;
 mod table;
 
-use futures::Future;
 use measurements::{Frequency, Power};
 use syx::drm::Cache as DrmCard;
+use tokio::task::JoinHandle;
 
 use crate::cli::Arg;
 use crate::Result;
@@ -57,7 +57,7 @@ impl Nvml {
         Ok(())
     }
 
-    pub(crate) fn tabulate(drm_cards: Vec<DrmCard>) -> impl Future<Output = Option<Vec<String>>> {
-        table::tabulate(drm_cards)
+    pub(crate) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
+        table::tabulate(drm_cards).await
     }
 }

@@ -1,8 +1,8 @@
 mod args;
 mod table;
 
-use futures::Future;
 use measurements::Frequency;
+use tokio::task::JoinHandle;
 
 use crate::cli::Arg;
 use crate::Result;
@@ -80,7 +80,7 @@ impl Cpu {
         Ok(())
     }
 
-    pub(crate) fn tabulate() -> impl Future<Output = Option<Vec<String>>> {
-        table::tabulate()
+    pub(crate) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
+        table::tabulate().await
     }
 }
