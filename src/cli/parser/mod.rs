@@ -92,7 +92,7 @@ impl Parser {
     }
 
     pub(crate) async fn cpu_ids(&self, name: &str) -> Result<Option<Vec<u64>>> {
-        let r = if let Some(v) = self.str(name) {
+        Ok(if let Some(v) = self.str(name) {
             let i = v.split(',').map(Result::Ok);
             let mut r: Vec<_> = stream::iter(i)
                 .map_ok(CpuIds::async_from_str)
@@ -109,15 +109,14 @@ impl Parser {
             Some(r)
         } else {
             None
-        };
-        Ok(r)
+        })
     }
 
     pub(crate) async fn drm_ids<T>(&self, name: &str) -> Result<Option<Vec<u64>>>
     where
         T: DrmDriver,
     {
-        let r = if let Some(v) = self.str(name) {
+        Ok(if let Some(v) = self.str(name) {
             let i = v.split(',').map(Result::Ok);
             let mut r: Vec<_> = stream::iter(i)
                 .and_then(|v| async move {
@@ -132,8 +131,7 @@ impl Parser {
             Some(r)
         } else {
             None
-        };
-        Ok(r)
+        })
     }
 
     pub(crate) fn flag(&self, name: &str) -> Option<()> {

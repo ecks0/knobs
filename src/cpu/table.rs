@@ -14,32 +14,45 @@ fn khz(v: u64) -> String {
     frequency(Frequency::from_kilohertz(v as f64))
 }
 
-async fn cpu_cpufreq(cpus: Vec<Cpu>, cpufreqs: Vec<Cpufreq>) -> Option<String> {
+async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<String> {
     log::trace!("cpu tabulate cpu_cpufreq start");
     if cpus.is_empty() {
         log::trace!("cpu tabulate cpu_cpufreq none");
         None
     } else {
+        let tasks: Vec<_> = cpus
+            .into_iter()
+            .map(|cpu| {
+                let cpufreq = cpufreqs
+                    .iter()
+                    .position(|cpufreq| cpufreq.id() == cpu.id())
+                    .map(|i| cpufreqs.swap_remove(i));
+                tokio::spawn(async move {
+                    let mut row = vec![
+                        cpu.id().to_string(),
+                        cpu.online().await.ok().map(|v| v.to_string()).unwrap_or_else(dot),
+                    ];
+                    if let Some(cpufreq) = cpufreq {
+                        row.extend([
+                            cpufreq.scaling_governor().await.ok().unwrap_or_else(dot),
+                            cpufreq.scaling_cur_freq().await.ok().map(khz).unwrap_or_else(dot),
+                            cpufreq.scaling_min_freq().await.ok().map(khz).unwrap_or_else(dot),
+                            cpufreq.scaling_max_freq().await.ok().map(khz).unwrap_or_else(dot),
+                            cpufreq.cpuinfo_min_freq().await.ok().map(khz).unwrap_or_else(dot),
+                            cpufreq.cpuinfo_max_freq().await.ok().map(khz).unwrap_or_else(dot),
+                        ]);
+                    } else {
+                        row.extend([dot(), dot(), dot(), dot(), dot(), dot()]);
+                    }
+                    row
+                })
+            })
+            .collect();
         let mut tab = Table::new(&[
             "CPU", "Online", "Governor", "Cur", "Min", "Max", "Min lim", "Max lim",
         ]);
-        for cpu in cpus {
-            let mut row = vec![
-                cpu.id().to_string(),
-                cpu.online().await.ok().map(|v| v.to_string()).unwrap_or_else(dot),
-            ];
-            if let Some(cpufreq) = cpufreqs.iter().find(|v| v.id() == cpu.id()) {
-                row.extend([
-                    cpufreq.scaling_governor().await.ok().unwrap_or_else(dot),
-                    cpufreq.scaling_cur_freq().await.ok().map(khz).unwrap_or_else(dot),
-                    cpufreq.scaling_min_freq().await.ok().map(khz).unwrap_or_else(dot),
-                    cpufreq.scaling_max_freq().await.ok().map(khz).unwrap_or_else(dot),
-                    cpufreq.cpuinfo_min_freq().await.ok().map(khz).unwrap_or_else(dot),
-                    cpufreq.cpuinfo_max_freq().await.ok().map(khz).unwrap_or_else(dot),
-                ]);
-            } else {
-                row.extend([dot(), dot(), dot(), dot(), dot(), dot()]);
-            }
+        for task in tasks {
+            let row = task.await.expect("cpu tabulate cpu_cpufreq future");
             tab.row(&row);
         }
         let r = Some(tab.into());
