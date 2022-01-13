@@ -1,5 +1,5 @@
 use measurements::Frequency;
-use syx::drm::Cache as DrmCard;
+use syx::drm::Values as DrmCard;
 use syx::i915::Values as Card;
 use tokio::spawn;
 use tokio::task::JoinHandle;

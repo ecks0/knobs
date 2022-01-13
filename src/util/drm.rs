@@ -1,5 +1,5 @@
 use futures::stream::{self, StreamExt as _};
-use syx::drm::Cache as Card;
+use syx::drm::Values as Card;
 
 pub(crate) async fn ids_for_driver(cards: Vec<Card>, driver: &str) -> Vec<u64> {
     stream::iter(cards)

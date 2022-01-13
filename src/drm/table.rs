@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
-use syx::drm::Cache as Card;
+use syx::drm::Values as Card;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 

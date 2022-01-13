@@ -20,7 +20,7 @@ thiserror = "~1.0"
 
 [dependencies.syx]
 git = "https://github.com/ecks0/syx"
-rev = "v0.6.1"
+rev = "v0.6.2"
 features = ["logging", "nvml"]
 
 [dependencies.tokio]
@@ -35,3 +35,7 @@ features = [
   "sync",
   "time",
 ]
+
+[profile.release-lto]
+inherits = "release"
+lto = true

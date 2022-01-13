@@ -3,7 +3,7 @@ use measurements::Frequency;
 use syx::cpu::Values as Cpu;
 use syx::cpufreq::Values as Cpufreq;
 use syx::intel_pstate::policy::Values as PstatePolicy;
-use syx::intel_pstate::system::Cache as PstateSystem;
+use syx::intel_pstate::system::Values as PstateSystem;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 

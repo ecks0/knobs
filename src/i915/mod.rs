@@ -2,7 +2,7 @@ mod args;
 mod table;
 
 use measurements::Frequency;
-use syx::drm::Cache as DrmCard;
+use syx::drm::Values as DrmCard;
 use tokio::task::JoinHandle;
 
 use crate::cli::Arg;

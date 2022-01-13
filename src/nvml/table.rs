@@ -1,5 +1,5 @@
 use measurements::{Frequency, Power};
-use syx::drm::Cache as DrmCard;
+use syx::drm::Values as DrmCard;
 use syx::nvml::Values as Card;
 use tokio::spawn;
 use tokio::task::JoinHandle;
