@@ -108,32 +108,6 @@ ARM devices. The current flags are short and simple, which is good, but they
 may be too general to accomodate a broad range of cpu platforms and features.
 Eventually there will be a 1.0 release, after which flags will never change.
 
-## Missing amdgpu support
-
-I have decided to not support `amdgpu` at this time.
-
-The semantics of `amdgpu` sysfs attributes vary wildly from generation to
-generation, such that supporting `amdgpu` is more like supporting several
-different GPU drivers.
-
-Moreover, `amdgpu` flagrantly violates the "one file, one value" rule of sysfs,
-instead returning mutiple values, sometimes multiple data structures, per sysfs
-attribute as tabular data that must be parsed by the application. This places
-a much heavier burden on the application than is required by either `i915` or
-`nvml`.
-
-In order to offer robust `amdgpu` support, I would need to have access to a
-variety of `amdgpu` devices to ensure that the necessarily-more-complicated
-implementations work as expected, which is not realistic.
-
-While other rust projects[[1](https://github.com/Eraden/amdgpud)][[2](https://github.com/ilyazzz/amdgpu-sysfs-rs/)]
-support `amdgpu`, they appear to support only a subset of `amdgpu`
-devices - the subset that their authors have access to. Neither of these
-projects, for example, seem to support current-generation cards.
-
-Given all of this, `amdgpu` support is a heavier burden than I am willing to
-take up at this time, though this may change in the future.
-
 ## Example output
 
 **i7-8750H**
