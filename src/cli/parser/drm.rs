@@ -5,7 +5,7 @@ use std::str::FromStr;
 use async_trait::async_trait;
 
 use crate::cli::parser::Integer as _;
-use crate::util::convert::{AsyncFromStr, AsyncTryFrom};
+use crate::util::convert::{FromStrRef, TryFromValue};
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]
@@ -107,13 +107,13 @@ where
     T: DrmDriver;
 
 #[async_trait]
-impl<T> AsyncTryFrom<CardId> for DrmId<T>
+impl<T> TryFromValue<CardId> for DrmId<T>
 where
     T: DrmDriver,
 {
     type Error = Error;
 
-    async fn async_try_from(v: CardId) -> Result<Self> {
+    async fn try_from_value(v: CardId) -> Result<Self> {
         let index = match v.clone() {
             CardId::BusId(v) => {
                 let v = syx::BusId::from(v);
@@ -146,15 +146,15 @@ where
 }
 
 #[async_trait]
-impl<T> AsyncFromStr for DrmId<T>
+impl<T> FromStrRef for DrmId<T>
 where
     T: DrmDriver,
 {
     type Error = Error;
 
-    async fn async_from_str(v: &str) -> Result<Self> {
+    async fn from_str_ref(v: &str) -> Result<Self> {
         let r = CardId::from_str(v)?;
-        let r = Self::async_try_from(r).await?;
+        let r = Self::try_from_value(r).await?;
         Ok(r)
     }
 }

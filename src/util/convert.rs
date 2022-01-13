@@ -1,29 +1,29 @@
 use async_trait::async_trait;
 
 #[async_trait]
-pub(crate) trait AsyncTryInto<T>: Sized {
+pub(crate) trait TryFromValue<T>: Sized {
     type Error;
 
-    async fn async_try_into(self) -> Result<T, Self::Error>;
+    async fn try_from_value(v: T) -> Result<Self, Self::Error>;
 }
 
 #[async_trait]
-pub(crate) trait AsyncTryFrom<T>: Sized {
+pub(crate) trait TryValueInto<T>: Sized {
     type Error;
 
-    async fn async_try_from(v: T) -> Result<Self, Self::Error>;
+    async fn try_value_into(self) -> Result<T, Self::Error>;
 }
 
 #[async_trait]
-impl<T, U> AsyncTryInto<U> for T
+impl<T, U> TryValueInto<U> for T
 where
     T: Send,
-    U: AsyncTryFrom<T>,
+    U: TryFromValue<T>,
 {
     type Error = U::Error;
 
-    async fn async_try_into(self) -> Result<U, U::Error> {
-        U::async_try_from(self).await
+    async fn try_value_into(self) -> Result<U, U::Error> {
+        U::try_from_value(self).await
     }
 }
 
@@ -55,8 +55,8 @@ where
 }
 
 #[async_trait]
-pub(crate) trait AsyncFromStr: Sized {
+pub(crate) trait FromStrRef: Sized {
     type Error;
 
-    async fn async_from_str(s: &str) -> Result<Self, Self::Error>;
+    async fn from_str_ref(s: &str) -> Result<Self, Self::Error>;
 }

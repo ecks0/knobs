@@ -95,7 +95,7 @@ impl Parser {
         Ok(if let Some(v) = self.str(name) {
             let i = v.split(',').map(Result::Ok);
             let mut r: Vec<_> = stream::iter(i)
-                .map_ok(CpuIds::async_from_str)
+                .map_ok(CpuIds::from_str_ref)
                 .try_fold(HashSet::new(), |mut set, v| async move {
                     let v = v.await?;
                     set.extend(v);
@@ -120,7 +120,7 @@ impl Parser {
             let i = v.split(',').map(Result::Ok);
             let mut r: Vec<_> = stream::iter(i)
                 .and_then(|v| async move {
-                    let r: u64 = DrmId::<T>::async_from_str(v).await?.into();
+                    let r: u64 = DrmId::<T>::from_str_ref(v).await?.into();
                     Ok(r)
                 })
                 .try_collect()

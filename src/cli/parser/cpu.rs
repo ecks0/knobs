@@ -4,7 +4,7 @@ use std::str::FromStr;
 use async_trait::async_trait;
 
 use crate::cli::parser::number::Integer;
-use crate::util::convert::{AsyncFromStr, AsyncTryFrom};
+use crate::util::convert::{FromStrRef, TryFromValue};
 use crate::util::cpu;
 use crate::{Error, Result};
 
@@ -76,10 +76,10 @@ where
 pub(super) struct CpuIds(std::ops::RangeInclusive<u64>);
 
 #[async_trait]
-impl AsyncTryFrom<Range<u64>> for CpuIds {
+impl TryFromValue<Range<u64>> for CpuIds {
     type Error = Error;
 
-    async fn async_try_from(v: Range<u64>) -> Result<Self> {
+    async fn try_from_value(v: Range<u64>) -> Result<Self> {
         fn err(v: &Range<u64>) -> Error {
             Error::parse_value(format!(
                 "range includes cpu ids not found on the system: {}",
@@ -127,12 +127,12 @@ impl AsyncTryFrom<Range<u64>> for CpuIds {
 }
 
 #[async_trait]
-impl AsyncFromStr for CpuIds {
+impl FromStrRef for CpuIds {
     type Error = Error;
 
-    async fn async_from_str(v: &str) -> Result<Self> {
+    async fn from_str_ref(v: &str) -> Result<Self> {
         let r = Range::from_str(v)?;
-        let r = Self::async_try_from(r).await?;
+        let r = Self::try_from_value(r).await?;
         Ok(r)
     }
 }

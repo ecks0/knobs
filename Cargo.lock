@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "knobs"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "async-trait",
  "chrono",
