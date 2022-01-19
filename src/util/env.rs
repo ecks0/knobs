@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
-use crate::cli::ARGV0;
+use crate::cli::NAME;
 
 pub(crate) fn var_name(name: &str) -> String {
-    format!("{}_{}", ARGV0.to_ascii_uppercase(), name)
+    format!("{}_{}", NAME.to_ascii_uppercase(), name)
 }
 
 pub(crate) fn var(name: &str) -> Option<String> {

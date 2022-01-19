@@ -1,11 +1,10 @@
+use futures::future::FutureExt as _;
+use futures::stream::{self, StreamExt as _};
 use measurements::{Frequency, Power};
-use syx::drm::Values as DrmCard;
-use syx::nvml::Values as Card;
-use tokio::spawn;
-use tokio::task::JoinHandle;
 
-use crate::util::drm::ids_for_driver;
+use crate::applet::Formatter;
 use crate::util::format::{dot, frequency, power, Table};
+use crate::util::once;
 
 fn mhz(v: u32) -> String {
     frequency(Frequency::from_megahertz(v as f64))
@@ -15,12 +14,18 @@ fn mw(v: u32) -> String {
     power(Power::from_milliwatts(v as f64))
 }
 
-pub(super) async fn table(drm_cards: Vec<DrmCard>) -> Option<String> {
-    log::trace!("nvml tabulate table start");
-    let cards: Vec<_> =
-        ids_for_driver(drm_cards, "nvidia").await.into_iter().map(Card::new).collect();
+async fn table() -> Option<String> {
+    log::trace!("nvml summary table start");
+    let cards = once::drm_cards().await;
+    let cards: Vec<_> = stream::iter(cards)
+        .filter_map(|card| async move {
+            let is_nvml = card.driver().await.ok().map(|v| v == "nvidia").unwrap_or(false);
+            if is_nvml { Some(syx::nvml::Values::new(card.id())) } else { None }
+        })
+        .collect()
+        .await;
     if cards.is_empty() {
-        log::trace!("nvml tabulate table none");
+        log::trace!("nvml summary table none");
         None
     } else {
         let mut tab = Table::new(&[
@@ -46,11 +51,14 @@ pub(super) async fn table(drm_cards: Vec<DrmCard>) -> Option<String> {
             ]);
         }
         let r = Some(tab.into());
-        log::trace!("nvml tabulate table done");
+        log::trace!("nvml summary table done");
         r
     }
 }
 
-pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
-    vec![spawn(table(drm_cards))]
+pub(super) async fn summary() -> Vec<Formatter> {
+    log::trace!("nvml summary start");
+    let formatters = vec![table().boxed()];
+    log::trace!("nvml summary done");
+    formatters
 }

@@ -2,10 +2,10 @@ use std::fmt::Display;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
-use async_trait::async_trait;
+use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 
 use crate::cli::parser::Integer as _;
-use crate::util::convert::{FromStrRef, TryFromValue};
+use crate::util::once;
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]
@@ -102,27 +102,38 @@ impl DrmDriver for NvmlDriver {
 }
 
 #[derive(Debug)]
-pub(super) struct DrmId<T>(u64, PhantomData<T>)
+struct DrmId<T>(u64, PhantomData<T>)
 where
     T: DrmDriver;
 
-#[async_trait]
-impl<T> TryFromValue<CardId> for DrmId<T>
+impl<T> DrmId<T>
 where
     T: DrmDriver,
 {
-    type Error = Error;
-
-    async fn try_from_value(v: CardId) -> Result<Self> {
-        let index = match v.clone() {
+    async fn from_card_id(v: CardId) -> Result<Self> {
+        let cards = once::drm_cards().await;
+        let card = match v.clone() {
             CardId::BusId(v) => {
                 let v = syx::BusId::from(v);
-                let v = syx::drm::index(&v).await?;
-                Ok(v)
+                let mut card = None;
+                for c in cards {
+                    if v == c.bus_id().await? {
+                        card = Some(c);
+                        break;
+                    }
+                }
+                if let Some(card) = card {
+                    Ok(card)
+                } else {
+                    Err(Error::parse_value(format!(
+                        "drm card not found on the system: {:?}",
+                        v
+                    )))
+                }
             },
             CardId::Index(v) => {
-                if syx::drm::exists(v).await? {
-                    Ok(v)
+                if let Some(card) = cards.into_iter().find(|card| v == card.id()) {
+                    Ok(card)
                 } else {
                     Err(Error::parse_value(format!(
                         "drm card not found on the system: {}",
@@ -132,9 +143,9 @@ where
             },
         }?;
         let wanted = T::driver();
-        let found = syx::drm::driver(index).await?;
+        let found = card.driver().await?;
         let r = if wanted == found.as_str() {
-            Ok(index)
+            Ok(card.id())
         } else {
             Err(Error::parse_value(format!(
                 "drm card {}: expected driver {:?} but system reports {:?}",
@@ -143,18 +154,10 @@ where
         }?;
         Ok(Self(r, PhantomData))
     }
-}
 
-#[async_trait]
-impl<T> FromStrRef for DrmId<T>
-where
-    T: DrmDriver,
-{
-    type Error = Error;
-
-    async fn from_str_ref(v: &str) -> Result<Self> {
+    async fn from_str(v: &str) -> Result<Self> {
         let r = CardId::from_str(v)?;
-        let r = Self::try_from_value(r).await?;
+        let r = Self::from_card_id(r).await?;
         Ok(r)
     }
 }
@@ -165,5 +168,42 @@ where
 {
     fn from(v: DrmId<T>) -> Self {
         v.0
+    }
+}
+
+#[derive(Debug)]
+pub(super) struct DrmIds<T>(Vec<u64>, PhantomData<T>)
+where
+    T: DrmDriver;
+
+impl<T> DrmIds<T>
+where
+    T: DrmDriver,
+{
+    pub(super) async fn from_str(v: &str) -> Result<Self> {
+        let mut v: Vec<_> = stream::iter(v.split(','))
+            .map(Result::Ok)
+            .and_then(|v| async move {
+                let r: u64 = DrmId::<T>::from_str(v).await?.into();
+                Ok(r)
+            })
+            .try_collect()
+            .await?;
+        v.sort_unstable();
+        v.dedup();
+        let r = Self(v, PhantomData);
+        Ok(r)
+    }
+}
+
+impl<T> IntoIterator for DrmIds<T>
+where
+    T: DrmDriver,
+{
+    type IntoIter = std::vec::IntoIter<u64>;
+    type Item = u64;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

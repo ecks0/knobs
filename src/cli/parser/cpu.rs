@@ -1,11 +1,11 @@
+use std::collections::HashSet;
 use std::fmt::Display;
 use std::str::FromStr;
 
-use async_trait::async_trait;
+use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 
 use crate::cli::parser::number::Integer;
-use crate::util::convert::{FromStrRef, TryFromValue};
-use crate::util::cpu;
+use crate::util::once;
 use crate::{Error, Result};
 
 #[derive(Debug)]
@@ -73,20 +73,17 @@ where
 }
 
 #[derive(Debug)]
-pub(super) struct CpuIds(std::ops::RangeInclusive<u64>);
+struct CpuIdRange(std::ops::RangeInclusive<u64>);
 
-#[async_trait]
-impl TryFromValue<Range<u64>> for CpuIds {
-    type Error = Error;
-
-    async fn try_from_value(v: Range<u64>) -> Result<Self> {
+impl CpuIdRange {
+    async fn from_range(v: Range<u64>) -> Result<Self> {
         fn err(v: &Range<u64>) -> Error {
             Error::parse_value(format!(
                 "range includes cpu ids not found on the system: {}",
                 v
             ))
         }
-        let all = cpu::ids().await;
+        let all: Vec<_> = once::cpu_ids().await;
         let cpu_0 = all.iter().min().cloned();
         let cpu_n = all.iter().max().cloned();
         if let (Some(cpu_0), Some(cpu_n)) = (cpu_0, cpu_n) {
@@ -124,24 +121,49 @@ impl TryFromValue<Range<u64>> for CpuIds {
             ))
         }
     }
-}
 
-#[async_trait]
-impl FromStrRef for CpuIds {
-    type Error = Error;
-
-    async fn from_str_ref(v: &str) -> Result<Self> {
+    async fn from_str(v: &str) -> Result<Self> {
         let r = Range::from_str(v)?;
-        let r = Self::try_from_value(r).await?;
+        let r = Self::from_range(r).await?;
         Ok(r)
     }
 }
 
-impl IntoIterator for CpuIds {
+impl IntoIterator for CpuIdRange {
     type IntoIter = std::ops::RangeInclusive<u64>;
     type Item = u64;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0
+    }
+}
+
+#[derive(Debug)]
+pub(super) struct CpuIds(Vec<u64>);
+
+impl CpuIds {
+    pub(super) async fn from_str(s: &str) -> Result<Self> {
+        let mut v: Vec<_> = stream::iter(s.split(','))
+            .map(Ok)
+            .and_then(CpuIdRange::from_str)
+            .try_fold(HashSet::new(), |mut set, v| async move {
+                set.extend(v);
+                Ok(set)
+            })
+            .await?
+            .into_iter()
+            .collect();
+        v.sort_unstable();
+        let r = Self(v);
+        Ok(r)
+    }
+}
+
+impl IntoIterator for CpuIds {
+    type IntoIter = std::vec::IntoIter<u64>;
+    type Item = u64;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

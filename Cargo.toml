@@ -1,6 +1,6 @@
 [package]
 name = "knobs"
-version = "0.5.4"
+version = "0.6.0"
 edition = "2021"
 homepage = "https://github.com/ecks0/knobs"
 authors = ["eckso <eckso@eckso.io>"]
@@ -15,13 +15,12 @@ env_logger = "~0.9"
 futures = "~0.3"
 log = "~0.4"
 measurements = "~0.10"
-regex = "~1.5"
 thiserror = "~1.0"
 
 [dependencies.syx]
 git = "https://github.com/ecks0/syx"
 rev = "v0.6.2"
-features = ["logging", "nvml"]
+features = ["cache", "logging", "nvml"]
 
 [dependencies.tokio]
 version = "~1.15"

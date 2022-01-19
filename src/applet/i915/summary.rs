@@ -1,22 +1,27 @@
+use futures::future::FutureExt as _;
+use futures::stream::{self, StreamExt as _};
 use measurements::Frequency;
-use syx::drm::Values as DrmCard;
-use syx::i915::Values as Card;
-use tokio::spawn;
-use tokio::task::JoinHandle;
 
-use crate::util::drm::ids_for_driver;
+use crate::applet::Formatter;
 use crate::util::format::{dot, frequency, Table};
+use crate::util::once;
 
 fn mhz(v: u64) -> String {
     frequency(Frequency::from_megahertz(v as f64))
 }
 
-async fn table(drm_cards: Vec<DrmCard>) -> Option<String> {
-    log::trace!("i915 tabulate table start");
-    let cards: Vec<_> =
-        ids_for_driver(drm_cards, "i915").await.into_iter().map(Card::new).collect();
+async fn table() -> Option<String> {
+    log::trace!("i915 summary table start");
+    let cards = once::drm_cards().await;
+    let cards: Vec<_> = stream::iter(cards)
+        .filter_map(|card| async move {
+            let is_i915 = card.driver().await.ok().map(|v| v == "i915").unwrap_or(false);
+            if is_i915 { Some(syx::i915::Values::new(card.id())) } else { None }
+        })
+        .collect()
+        .await;
     if cards.is_empty() {
-        log::trace!("i915 tabulate table none");
+        log::trace!("i915 summary table none");
         None
     } else {
         let mut tab = Table::new(&[
@@ -36,11 +41,14 @@ async fn table(drm_cards: Vec<DrmCard>) -> Option<String> {
             ]);
         }
         let r = Some(tab.into());
-        log::trace!("i915 tabulate table done");
+        log::trace!("i915 summary table done");
         r
     }
 }
 
-pub(super) async fn tabulate(drm_cards: Vec<DrmCard>) -> Vec<JoinHandle<Option<String>>> {
-    vec![spawn(table(drm_cards))]
+pub(super) async fn summary() -> Vec<Formatter> {
+    log::trace!("i915 summary start");
+    let formatters = vec![table().boxed()];
+    log::trace!("i915 summary done");
+    formatters
 }

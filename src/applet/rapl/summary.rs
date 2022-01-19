@@ -1,14 +1,13 @@
 use std::time::Duration;
 
-use futures::future::try_join_all;
+use futures::future::{join_all, FutureExt as _};
 use futures::stream::TryStreamExt as _;
 use measurements::Power;
 use syx::intel_rapl::constraint::{Values as Constraint, LONG_TERM, SHORT_TERM};
 use syx::intel_rapl::zone::{self, Id as ZoneId, Values as Zone};
-use tokio::spawn;
-use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
+use crate::applet::Formatter;
 use crate::util::env;
 use crate::util::format::{dot, power, Table};
 
@@ -37,36 +36,37 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
 }
 
 async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Option<u64>) {
-    //log::trace!("rapl tabulate energy_uj start");
+    log::trace!("rapl summary energy_uj start");
     if let Ok(a) = zone::energy_uj(zone).await {
         sleep(interval).await;
         if let Ok(b) = zone::energy_uj(zone).await {
             let v = ((b - a) as f64 * scale).trunc() as u64;
+            log::trace!("rapl summary energy_uj done");
             return (zone, Some(v));
         }
     }
-    //log::trace!("rapl tabulate energy_uj done");
+    log::trace!("rapl summary energy_uj none");
     (zone, None)
 }
 
 async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     const INTERVAL_MS: u64 = 200;
 
-    log::trace!("rapl tabulate energy_ujs start");
+    log::trace!("rapl summary energy_ujs start");
     let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
-    let f = zones.iter().map(|v| spawn(energy_uj(v.id(), interval, scale)));
-    let r = try_join_all(f).await.expect("rapl tabulate energy_ujs futures");
-    log::trace!("rapl tabulate energy_ujs done");
+    let futs = zones.iter().map(|v| energy_uj(v.id(), interval, scale));
+    let r = join_all(futs).await;
+    log::trace!("rapl summary energy_ujs done");
     r
 }
 
-pub(super) async fn table() -> Option<String> {
-    log::trace!("rapl tabulate table start");
+async fn table() -> Option<String> {
+    log::trace!("rapl summary table start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
-        log::trace!("rapl tabulate table none");
+        log::trace!("rapl summary table none");
         None
     } else {
         zones.sort_by_key(|v| v.id());
@@ -95,11 +95,14 @@ pub(super) async fn table() -> Option<String> {
             ]);
         }
         let r = Some(tab.into());
-        log::trace!("rapl tabulate table done");
+        log::trace!("rapl summary table done");
         r
     }
 }
 
-pub(super) async fn tabulate() -> Vec<JoinHandle<Option<String>>> {
-    vec![spawn(table())]
+pub(super) async fn summary() -> Vec<Formatter> {
+    log::trace!("rapl summary start");
+    let formatters = vec![table().boxed()];
+    log::trace!("rapl summary done");
+    formatters
 }

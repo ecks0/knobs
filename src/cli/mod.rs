@@ -1,29 +1,18 @@
-mod group;
 mod parser;
 
 use std::io::Write as _;
-use std::iter::once;
 
 use clap::ErrorKind as ClapErrorKind;
-use futures::stream::{self, StreamExt as _, TryStreamExt as _};
+use futures::future::join_all;
+use futures::stream::{self, StreamExt as _};
 use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
 
-use crate::cli::group::{Group, Groups};
+use crate::applet::{self, Applet, Formatter};
 pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
-use crate::util::convert::*;
 use crate::util::env::var_name;
-use crate::{Cpu, Drm, Error, Nvml, Rapl, Result, I915};
+use crate::{Error, Result};
 
-pub(crate) const ARGV0: &str = "knobs";
-
-const QUIET: &str = "quiet";
-const SHOW_CPU: &str = "show-cpu";
-const SHOW_DRM: &str = "show-drm";
-const SHOW_RAPL: &str = "show-rapl";
-
-const QUIET_SHORT: char = 'q';
-
-const GROUP_SEP: &str = "--";
+pub(crate) const NAME: &str = "knobs";
 
 fn config_logging() {
     let env = env_logger::Env::default()
@@ -49,171 +38,145 @@ pub(crate) struct Arg {
     pub(crate) long: Option<&'static str>,
     pub(crate) short: Option<char>,
     pub(crate) value_name: Option<&'static str>,
-    pub(crate) help: Option<String>,
+    pub(crate) help: Option<&'static str>,
     pub(crate) help_long: Option<String>,
+    pub(crate) required: Option<bool>,
     pub(crate) requires: Option<Vec<&'static str>>,
     pub(crate) conflicts: Option<Vec<&'static str>>,
     pub(crate) raw: Option<bool>,
 }
 
-fn table_args() -> Vec<Arg> {
-    vec![
-        Arg {
-            name: QUIET.into(),
-            long: QUIET.into(),
-            short: QUIET_SHORT.into(),
-            help: "Do not print tables".to_string().into(),
-            ..Default::default()
-        },
-        Arg {
-            name: SHOW_CPU.into(),
-            long: SHOW_CPU.into(),
-            help: "Print cpu tables".to_string().into(),
-            ..Default::default()
-        },
-        Arg {
-            name: SHOW_RAPL.into(),
-            long: SHOW_RAPL.into(),
-            help: "Print rapl table".to_string().into(),
-            ..Default::default()
-        },
-        Arg {
-            name: SHOW_DRM.into(),
-            long: SHOW_DRM.into(),
-            help: "Print drm tables".to_string().into(),
-            ..Default::default()
-        },
-    ]
-}
-
-fn group_arg() -> Vec<Arg> {
-    vec![Arg {
-        // This argument exists for the sake of --help. It is not parsed by the cli.
-        name: "ARGS".into(),
-        raw: true.into(),
-        help: "Additional option groups".to_string().into(),
-        help_long: "Additional option groups delimited by --".to_string().into(),
-        ..Default::default()
-    }]
-}
-
-fn args() -> impl Iterator<Item = Arg> {
-    Cpu::args()
-        .into_iter()
-        .chain(Rapl::args())
-        .chain(I915::args())
-        .chain(Nvml::args())
-        .chain(table_args())
-        .chain(group_arg())
-}
-
-fn argvs(argv: &[String]) -> Vec<Vec<&str>> {
-    log::trace!("cli parse argvs start");
-    let r = argv
-        .split(|arg| arg == GROUP_SEP)
-        .map(|argv| {
-            let argv = argv.iter().map(|v| v.as_str());
-            let argv: Vec<_> = once(ARGV0).chain(argv).collect();
-            argv
-        })
-        .collect();
-    log::trace!("cli parse argvs done");
-    r
-}
-
-async fn groups(args: Vec<Arg>, argvs: Vec<Vec<&str>>) -> Result<Groups> {
-    log::trace!("cli parse groups start");
-    let groups = argvs.into_iter().map(|argv| (&args, argv));
-    let groups: Vec<_> = stream::iter(groups)
-        .enumerate()
-        .map(Ok)
-        .and_then(|(i, (args, argv))| async move {
-            async {
-                let parser = Parser::new(args, &argv)?;
-                Group::try_from_ref(&parser).await
+impl<'a> From<&'a Arg> for clap::Arg<'a> {
+    fn from(v: &'a Arg) -> Self {
+        let name = v.name.expect("Cli argument name is missing");
+        let mut a = clap::Arg::new(name);
+        if let Some(long) = v.long {
+            a = a.long(long);
+        }
+        if let Some(short) = v.short {
+            a = a.short(short);
+        }
+        if let Some(value_name) = v.value_name {
+            a = a.takes_value(true).value_name(value_name);
+        }
+        if let Some(help) = v.help {
+            a = a.help(help);
+        }
+        if let Some(help_long) = &v.help_long {
+            a = a.long_help(help_long.as_str());
+        }
+        if let Some(required) = v.required {
+            a = a.required(required);
+        }
+        if let Some(requires) = &v.requires {
+            for required in requires {
+                a = a.requires(required);
             }
-            .await
-            .map_err(|e| Error::parse_group(e, i + 1))
-        })
-        .try_collect()
-        .await?;
-    let groups = Groups::from_iter(groups);
-    log::trace!("cli parse groups done");
-    Ok(groups)
+        }
+        if let Some(conflicts) = &v.conflicts {
+            for conflicted in conflicts {
+                a = a.conflicts_with(conflicted);
+            }
+        }
+        if let Some(raw) = v.raw {
+            a = a.raw(raw);
+        }
+        a
+    }
 }
 
-async fn parse(argv: impl IntoIterator<Item = String>) -> Result<(Parser, Groups)> {
-    log::trace!("cli parse start");
-    let args: Vec<_> = args().collect();
-    let argv: Vec<_> = argv.into_iter().skip(1).collect();
-    let argvs = argvs(&argv);
-    let parser = Parser::new(&args, &argvs[0]).map_err(|e| Error::parse_group(e, 1))?;
-    let groups = groups(args, argvs).await?;
-    let r = (parser, groups);
-    log::trace!("cli parse done");
-    Ok(r)
-}
-
-async fn tabulate(parser: &Parser, groups: &Groups) -> Result<()> {
-    log::trace!("cli tabulate start");
-    let show_cpu = parser.flag(SHOW_CPU).is_some();
-    let show_rapl = parser.flag(SHOW_RAPL).is_some();
-    let show_drm = parser.flag(SHOW_DRM).is_some();
-    let has_show_flags = show_cpu || show_rapl || show_drm;
-    let has_cpu_vals = groups.has_cpu_values();
-    let has_rapl_vals = groups.has_rapl_values();
-    let has_i915_vals = groups.has_i915_values();
-    let has_nvml_vals = groups.has_nvml_values();
-    let has_drm_vals = has_i915_vals || has_nvml_vals;
-    let has_vals = has_cpu_vals || has_rapl_vals || has_drm_vals;
-    log::trace!("cli tabulate spawn");
-    let mut tabulators = vec![];
-    if (!has_vals && !has_show_flags) || (has_cpu_vals && !has_show_flags) || show_cpu {
-        tabulators.extend(Cpu::tabulate().await);
-    }
-    if (!has_vals && !has_show_flags) || (has_rapl_vals && !has_show_flags) || show_rapl {
-        tabulators.extend(Rapl::tabulate().await);
-    }
-    if (!has_vals && !has_show_flags) || (has_drm_vals && !has_show_flags) || show_drm {
-        tabulators.extend(Drm::tabulate().await);
-    }
+async fn format(formatters: Vec<Formatter>) {
     let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
     let mut ok = false;
-    log::trace!("cli tabulate print");
-    for tabulator in tabulators {
-        if let Some(table) = tabulator.await.expect("cli tabulate future") {
-            if ok {
-                stdout.write_all("\n".as_bytes()).await.unwrap();
-            } else {
-                ok = true;
-            }
-            stdout.write_all(table.as_bytes()).await.unwrap();
-            log::trace!("cli tabulate print table");
+    for output in join_all(formatters).await.into_iter().flatten() {
+        if ok {
+            stdout.write_all("\n".as_bytes()).await.unwrap();
+        } else {
+            ok = true;
         }
+        stdout.write_all(output.as_bytes()).await.unwrap();
     }
     if ok {
         stdout.flush().await.unwrap();
-    } else {
-        let mut stderr = stderr();
-        stderr.write_all("No supported devices were found\n".as_bytes()).await.unwrap();
-        stderr.flush().await.unwrap();
     }
-    log::trace!("cli tabulate done");
+}
+
+fn make_clap_app<'a, S>(name: S) -> clap::App<'a>
+where
+    S: Into<String>,
+{
+    clap::App::new(name)
+        .color(clap::ColorChoice::Never)
+        .setting(clap::AppSettings::DeriveDisplayOrder)
+        .setting(clap::AppSettings::DisableHelpSubcommand)
+        .version(clap::crate_version!())
+}
+
+async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Result<()> {
+    let applet_args: Vec<_> = applets.iter().map(|a| (a, a.args())).collect();
+    let matches = applet_args
+        .iter()
+        .fold(make_clap_app(NAME), |app, (applet, args)| {
+            let subcmd_args = args.iter().map(clap::Arg::from);
+            let subcmd = make_clap_app(applet.name()).args(subcmd_args).about(applet.about());
+            app.subcommand(subcmd)
+        })
+        .try_get_matches_from(argv)?;
+    drop(applet_args);
+    let formatters: Vec<_> = match matches.subcommand() {
+        Some((subcmd, subcmd_matches)) => {
+            let mut applet = applets.into_iter().find(|a| a.name() == subcmd).unwrap();
+            let parser = Parser::from(subcmd_matches);
+            applet.run(parser).await?;
+            drop(matches);
+            applet.summary().await
+        },
+        None => {
+            drop(matches);
+            stream::iter(applets)
+                .filter_map(|applet| async move {
+                    if applet.default_summary() { Some(applet.summary().await) } else { None }
+                })
+                .map(stream::iter)
+                .flatten()
+                .collect()
+                .await
+        },
+    };
+    format(formatters).await;
     Ok(())
+}
+
+async fn run_binary(bin: &str, argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Result<()> {
+    let mut applet =
+        applets.into_iter().find(|a| a.bin().map(|v| bin == v).unwrap_or(false)).unwrap();
+    let applet_args = applet.args();
+    let clap_args: Vec<_> = applet_args.iter().map(clap::Arg::from).collect();
+    let matches = make_clap_app(bin).args(clap_args).try_get_matches_from(argv)?;
+    drop(applet_args);
+    let parser = Parser::from(&matches);
+    applet.run(parser).await?;
+    drop(matches);
+    let formatters = applet.summary().await;
+    drop(applet);
+    format(formatters).await;
+    Ok(())
+}
+
+fn argv0(argv: &[String]) -> String {
+    argv.iter().next().and_then(|s| s.as_str().split('/').last()).unwrap_or(NAME).to_string()
 }
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
     config_logging();
-    log::trace!("cli try_run_with_args start");
-    let (parser, groups) = parse(argv).await?;
-    log::trace!("cli try_run_with_args apply");
-    groups.apply().await?;
-    if parser.flag(QUIET).is_none() {
-        log::trace!("cli try_run_with_args tabulate");
-        tabulate(&parser, &groups).await?;
+    let argv: Vec<_> = argv.into_iter().collect();
+    let argv0 = argv0(&argv);
+    let applets = applet::all();
+    if applets.iter().any(|a| a.bin().map(|v| argv0 == v).unwrap_or(false)) {
+        run_binary(&argv0, argv, applets).await
+    } else {
+        run_subcommand(argv, applets).await
     }
-    log::trace!("cli try_run_with_args done");
-    Ok(())
 }
 
 pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {

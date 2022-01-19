@@ -70,7 +70,7 @@ impl<'a> Display for Table<'a> {
         for row in &self.rows {
             tab.add_row(row);
         }
-        writeln!(f, "{}", tab.to_string())
+        writeln!(f, "{}", tab)
     }
 }
 
