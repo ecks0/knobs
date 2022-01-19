@@ -22,6 +22,8 @@ knobs -h
 
 ## Utilities
 
+With no arguments, utilities print tables describing current device values.
+
 ### kcpu
 
 View or set cpu, cpufeq, and intel_pstate values.
