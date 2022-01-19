@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use futures::future::{self, FutureExt as _};
 use tokio::fs::symlink;
-use tokio::io::{stdout, AsyncWriteExt as _};
+use tokio::io::{stderr, stdout, AsyncWriteExt as _};
 
 use crate::applet::{self, Applet, Formatter};
 use crate::cli::{Arg, Parser};
@@ -44,21 +43,29 @@ impl Applet for Install {
         } else {
             argv0.parent().expect("parent directory of argv[0]").into()
         };
+        let mut stdout = stdout();
+        let mut stderr = stderr();
+        let mut ok = true;
         let bins: Vec<_> =
             applet::all().into_iter().filter_map(|a| a.bin().map(|v| dir.join(v))).collect();
-        let mut stdout = stdout();
         for bin in bins {
-            symlink(&argv0, &bin).await.map_err(|e| Error::Install(e, bin.clone()))?;
-            let msg = format!("{}\n", bin.display());
-            stdout.write_all(msg.as_bytes()).await.unwrap();
+            if let Err(e) = symlink(&argv0, &bin).await {
+                ok = false;
+                let msg = format!("{}: {}\n", bin.display(), e);
+                stderr.write_all(msg.as_bytes()).await.unwrap();
+            } else {
+                let msg = format!("{}\n", bin.display());
+                stdout.write_all(msg.as_bytes()).await.unwrap();
+            }
         }
         stdout.flush().await.unwrap();
+        stderr.flush().await.unwrap();
         log::trace!("install run done");
-        Ok(())
+        if ok { Ok(()) } else { Err(Error::Install) }
     }
 
     async fn summary(&self) -> Vec<Formatter> {
-        vec![future::ready(Some(String::new())).boxed()]
+        vec![]
     }
 
     fn default_summary(&self) -> bool {

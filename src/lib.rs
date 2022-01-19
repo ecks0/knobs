@@ -3,7 +3,6 @@ mod cli;
 mod util;
 
 use std::fmt::Display;
-use std::path::PathBuf;
 
 pub use clap::Error as ClapError;
 pub use syx::Error as SyxError;
@@ -16,8 +15,8 @@ pub enum Error {
     #[error(transparent)]
     Clap(#[from] ClapError),
 
-    #[error("error creating applet symlink at {1}: {0}")]
-    Install(std::io::Error, PathBuf),
+    #[error("failed to create one or more symlinks")]
+    Install,
 
     #[error("error: {0}")]
     Syx(#[from] SyxError),
