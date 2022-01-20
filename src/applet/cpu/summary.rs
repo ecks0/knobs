@@ -49,7 +49,7 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<Strin
             "CPU", "Online", "Governor", "Cur", "Min", "Max", "Min lim", "Max lim",
         ]);
         for row in join_all(futs).await {
-            tab.row(&row);
+            tab.row(row);
         }
         let r = Some(tab.into());
         log::trace!("cpu summary cpu_cpufreq done");
@@ -85,10 +85,10 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
         } else {
             let mut tab = Table::new(&["CPU", "Available governors"]);
             if govs.len() == 1 {
-                tab.row(&["all", govs[0]]);
+                tab.row(["all".to_string(), govs[0].to_string()]);
             } else {
                 for (id, govs) in values {
-                    tab.row(&[id.to_string(), govs]);
+                    tab.row([id.to_string(), govs]);
                 }
             }
             let r = Some(tab.into());
@@ -144,10 +144,10 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
             let mut tab = Table::new(&["CPU", "EP bias", "EP preference"]);
             if epb_epp.len() == 1 {
                 let (epb, epp) = epb_epp[0];
-                tab.row(&["all", epb, epp]);
+                tab.row(["all".to_string(), epb.to_string(), epp.to_string()]);
             } else {
                 for (id, epb, epp) in values {
-                    tab.row(&[id, epb, epp]);
+                    tab.row([id, epb, epp]);
                 }
             }
             let r = Some(tab.into());
@@ -185,10 +185,10 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
         } else {
             let mut tab = Table::new(&["CPU", "Available EP preferences"]);
             if epps.len() == 1 {
-                tab.row(&["all", epps[0]]);
+                tab.row(["all".to_string(), epps[0].to_string()]);
             } else {
                 for (id, epps) in values {
-                    tab.row(&[id, epps]);
+                    tab.row([id, epps]);
                 }
             }
             let r = Some(tab.into());

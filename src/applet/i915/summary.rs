@@ -28,7 +28,7 @@ async fn table() -> Option<String> {
             "DRM", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
         ]);
         for card in cards {
-            tab.row(&[
+            tab.row([
                 card.id().to_string(),
                 "i915".to_string(),
                 card.act_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),

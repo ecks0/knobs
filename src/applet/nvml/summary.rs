@@ -39,7 +39,7 @@ async fn table() -> Option<String> {
             "Max lim",
         ]);
         for card in cards {
-            tab.row(&[
+            tab.row([
                 card.id().to_string(),
                 "nvidia".to_string(),
                 card.gfx_freq().await.ok().map(mhz).unwrap_or_else(dot),

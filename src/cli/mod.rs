@@ -116,10 +116,10 @@ async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Res
     let applet_args: Vec<_> = applets.iter().map(|a| (a, a.args())).collect();
     let matches = applet_args
         .iter()
-        .fold(make_clap_app(NAME), |app, (applet, args)| {
+        .fold(make_clap_app(NAME), |clap_app, (applet, args)| {
             let subcmd_args = args.iter().map(clap::Arg::from);
             let subcmd = make_clap_app(applet.name()).args(subcmd_args).about(applet.about());
-            app.subcommand(subcmd)
+            clap_app.subcommand(subcmd)
         })
         .try_get_matches_from(argv)?;
     drop(applet_args);

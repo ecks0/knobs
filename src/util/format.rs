@@ -32,7 +32,7 @@ pub(crate) fn power(p: Power) -> String {
 }
 
 #[derive(Debug)]
-pub struct Table<'a> {
+pub(crate) struct Table<'a> {
     header: &'a [&'a str],
     rows: Vec<Vec<String>>,
 }
@@ -45,8 +45,8 @@ impl<'a> Table<'a> {
         Self { header, rows }
     }
 
-    pub(crate) fn row<S: Display>(&mut self, row: &[S]) {
-        let row = row.iter().map(ToString::to_string).collect();
+    pub(crate) fn row(&mut self, row: impl IntoIterator<Item = String>) {
+        let row = row.into_iter().collect();
         self.rows.push(row);
     }
 }

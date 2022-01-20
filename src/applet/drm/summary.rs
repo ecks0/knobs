@@ -20,7 +20,7 @@ async fn table(cards: Vec<Card>) -> Option<String> {
         for card in cards {
             let (bus, bus_id) =
                 card.bus_id().await.ok().map(|v| (Some(v.bus), Some(v.id))).unwrap_or((None, None));
-            tab.row(&[
+            tab.row([
                 card.id().to_string(),
                 card.driver().await.ok().unwrap_or_else(dot),
                 bus.unwrap_or_else(dot),

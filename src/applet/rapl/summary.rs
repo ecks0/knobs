@@ -84,7 +84,7 @@ async fn table() -> Option<String> {
             let (long_lim, long_win) = limit_window(&zone, LONG_TERM).await;
             let (short_lim, short_win) = limit_window(&zone, SHORT_TERM).await;
             let energy_uj = energy_ujs.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
-            tab.row(&[
+            tab.row([
                 zone_id(zone.id()),
                 zone.name().await.ok().unwrap_or_else(dot),
                 long_lim.map(uw).unwrap_or_else(dot),
