@@ -53,14 +53,14 @@ impl Applet for Rapl {
         let values = Values::from_parser(p).await?;
         self.quiet = values.quiet;
         if let Some(constraint_ids) = values.constraint_ids {
+            let limit = values.limit.map(|v| v.as_microwatts().trunc() as u64);
+            let window = values.window.map(|v| v.as_micros().try_into().unwrap());
             for constraint in constraint_ids.constraints {
                 let id = (constraint_ids.package, constraint_ids.subzone, constraint);
-                if let Some(v) = values.limit {
-                    let v = v.as_microwatts().trunc() as u64;
+                if let Some(v) = limit {
                     syx::intel_rapl::constraint::set_power_limit_uw(id, v).await?;
                 }
-                if let Some(v) = values.window {
-                    let v: u64 = v.as_micros().try_into().unwrap();
+                if let Some(v) = window {
                     syx::intel_rapl::constraint::set_time_window_us(id, v).await?;
                 }
             }

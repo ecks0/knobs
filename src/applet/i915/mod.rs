@@ -45,17 +45,17 @@ impl Applet for I915 {
         let values = Values::from_parser(p).await?;
         self.quiet = values.quiet;
         if let Some(cards) = values.ids {
+            let min = values.min.map(|v| v.as_megahertz().trunc() as u64);
+            let max = values.max.map(|v| v.as_megahertz().trunc() as u64);
+            let boost = values.boost.map(|v| v.as_megahertz().trunc() as u64);
             for id in cards {
-                if let Some(v) = values.min {
-                    let v = v.as_megahertz().trunc() as u64;
+                if let Some(v) = min {
                     syx::i915::set_min_freq_mhz(id, v).await?;
                 }
-                if let Some(v) = values.max {
-                    let v = v.as_megahertz().trunc() as u64;
+                if let Some(v) = max {
                     syx::i915::set_max_freq_mhz(id, v).await?;
                 }
-                if let Some(v) = values.boost {
-                    let v = v.as_megahertz().trunc() as u64;
+                if let Some(v) = boost {
                     syx::i915::set_boost_freq_mhz(id, v).await?;
                 }
             }
