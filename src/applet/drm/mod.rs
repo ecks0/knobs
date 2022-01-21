@@ -15,6 +15,10 @@ impl Applet for Drm {
         "drm"
     }
 
+    fn bin(&self) -> Option<&'static str> {
+        Some("kdrm")
+    }
+
     fn about(&self) -> &'static str {
         "View drm values"
     }

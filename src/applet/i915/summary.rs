@@ -1,5 +1,4 @@
-use futures::future::FutureExt as _;
-use futures::stream::{self, StreamExt as _};
+use futures::future::{join_all, FutureExt as _};
 use measurements::Frequency;
 
 use crate::applet::Formatter;
@@ -13,22 +12,20 @@ fn mhz(v: u64) -> String {
 async fn table() -> Option<String> {
     log::trace!("i915 summary table start");
     let cards = once::drm_cards().await;
-    let cards: Vec<_> = stream::iter(cards)
-        .filter_map(|card| async move {
-            let is_i915 = card.driver().await.ok().map(|v| v == "i915").unwrap_or(false);
-            if is_i915 { Some(syx::i915::Values::new(card.id())) } else { None }
-        })
-        .collect()
-        .await;
+    let cards: Vec<_> = join_all(cards.into_iter().map(|card| async move {
+        let is_i915 = card.driver().await.ok().map(|v| v == "i915").unwrap_or(false);
+        if is_i915 { Some(syx::i915::Values::new(card.id())) } else { None }
+    }))
+    .await
+    .into_iter()
+    .flatten()
+    .collect();
     if cards.is_empty() {
         log::trace!("i915 summary table none");
         None
     } else {
-        let mut tab = Table::new(&[
-            "DRM", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
-        ]);
-        for card in cards {
-            tab.row([
+        let rows = join_all(cards.iter().map(|card| async move {
+            [
                 card.id().to_string(),
                 "i915".to_string(),
                 card.act_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
@@ -38,9 +35,14 @@ async fn table() -> Option<String> {
                 card.boost_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.rpn_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.rp0_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
-            ]);
-        }
-        let r = Some(tab.into());
+            ]
+        }))
+        .await;
+        let mut tab = Table::new(&[
+            "DRM", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
+        ]);
+        tab.rows(rows);
+        let r = Some(tab.format());
         log::trace!("i915 summary table done");
         r
     }

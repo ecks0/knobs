@@ -30,6 +30,10 @@ impl Applet for Nvml {
         "nvml"
     }
 
+    fn bin(&self) -> Option<&'static str> {
+        Some("knvml")
+    }
+
     fn about(&self) -> &'static str {
         "View or set nvml values"
     }

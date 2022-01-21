@@ -33,14 +33,14 @@ pub(crate) fn power(p: Power) -> String {
 
 #[derive(Debug)]
 pub(crate) struct Table<'a> {
-    header: &'a [&'a str],
+    header: &'a [&'static str],
     rows: Vec<Vec<String>>,
 }
 
 impl<'a> Table<'a> {
     const LINE: &'static str = "-";
 
-    pub(crate) fn new(header: &'a [&'a str]) -> Self {
+    pub(crate) fn new(header: &'a [&'static str]) -> Self {
         let rows = vec![];
         Self { header, rows }
     }
@@ -48,6 +48,20 @@ impl<'a> Table<'a> {
     pub(crate) fn row(&mut self, row: impl IntoIterator<Item = String>) {
         let row = row.into_iter().collect();
         self.rows.push(row);
+    }
+
+    pub(crate) fn rows<I, R>(&mut self, rows: I)
+    where
+        I: IntoIterator<Item = R>,
+        R: IntoIterator<Item = String>,
+    {
+        for row in rows {
+            self.row(row);
+        }
+    }
+
+    pub(crate) fn format(self) -> String {
+        self.to_string()
     }
 }
 

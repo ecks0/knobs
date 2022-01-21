@@ -1,11 +1,11 @@
-use crate::applet::rapl::ConstraintIds;
+use crate::applet::RaplConstraintIds;
 use crate::{Error, Result};
 
 pub(super) async fn constraint_ids(
     package: u64,
     subzone: Option<u64>,
     constraints: Vec<u64>,
-) -> Result<ConstraintIds> {
+) -> Result<RaplConstraintIds> {
     if !syx::intel_rapl::zone::exists((package, subzone)).await? {
         let mut s = format!("package {} ", package);
         if let Some(subzone) = subzone {
@@ -23,7 +23,7 @@ pub(super) async fn constraint_ids(
             return Err(Error::parse_value(s));
         }
     }
-    let r = ConstraintIds {
+    let r = RaplConstraintIds {
         package,
         subzone,
         constraints,

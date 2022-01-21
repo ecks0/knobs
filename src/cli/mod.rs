@@ -4,7 +4,6 @@ use std::io::Write as _;
 
 use clap::ErrorKind as ClapErrorKind;
 use futures::future::join_all;
-use futures::stream::{self, StreamExt as _};
 use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
 
 use crate::applet::{self, Applet, Formatter};
@@ -22,7 +21,7 @@ fn config_logging() {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{} {} [{:>20}] {}",
+                "{} {} [{:>32}] {}",
                 chrono::Local::now().format("%H:%M:%S%.6f"),
                 record.level().to_string().chars().next().unwrap_or('-'),
                 record.target(),
@@ -85,6 +84,17 @@ impl<'a> From<&'a Arg> for clap::Arg<'a> {
     }
 }
 
+fn make_clap_app<'a, S>(name: S) -> clap::App<'a>
+where
+    S: Into<String>,
+{
+    clap::App::new(name)
+        .color(clap::ColorChoice::Never)
+        .setting(clap::AppSettings::DeriveDisplayOrder)
+        .setting(clap::AppSettings::DisableHelpSubcommand)
+        .version(clap::crate_version!())
+}
+
 async fn format(formatters: Vec<Formatter>) {
     let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
     let mut ok = false;
@@ -101,17 +111,6 @@ async fn format(formatters: Vec<Formatter>) {
     }
 }
 
-fn make_clap_app<'a, S>(name: S) -> clap::App<'a>
-where
-    S: Into<String>,
-{
-    clap::App::new(name)
-        .color(clap::ColorChoice::Never)
-        .setting(clap::AppSettings::DeriveDisplayOrder)
-        .setting(clap::AppSettings::DisableHelpSubcommand)
-        .version(clap::crate_version!())
-}
-
 async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Result<()> {
     let applet_args: Vec<_> = applets.iter().map(|a| (a, a.args())).collect();
     let matches = applet_args
@@ -123,7 +122,7 @@ async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Res
         })
         .try_get_matches_from(argv)?;
     drop(applet_args);
-    let formatters: Vec<_> = match matches.subcommand() {
+    let formatters = match matches.subcommand() {
         Some((subcmd, subcmd_matches)) => {
             let mut applet = applets.into_iter().find(|a| a.name() == subcmd).unwrap();
             let parser = Parser::from(subcmd_matches);
@@ -133,14 +132,10 @@ async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Res
         },
         None => {
             drop(matches);
-            stream::iter(applets)
-                .filter_map(|applet| async move {
-                    if applet.default_summary() { Some(applet.summary().await) } else { None }
-                })
-                .map(stream::iter)
-                .flatten()
-                .collect()
-                .await
+            let default_summaries = applets.into_iter().map(|applet| async move {
+                if applet.default_summary() { Some(applet.summary().await) } else { None }
+            });
+            join_all(default_summaries).await.into_iter().flatten().flatten().collect()
         },
     };
     format(formatters).await;

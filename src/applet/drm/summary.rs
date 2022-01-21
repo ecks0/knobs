@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use futures::future::FutureExt as _;
+use futures::future::{join_all, FutureExt as _};
 use futures::stream::{self, StreamExt as _};
 use syx::drm::Cache as Card;
 
@@ -16,18 +16,20 @@ async fn table(cards: Vec<Card>) -> Option<String> {
         log::trace!("drm summary table none");
         None
     } else {
-        let mut tab = Table::new(&["DRM", "Driver", "Bus", "Bus id"]);
-        for card in cards {
+        let rows = join_all(cards.iter().map(|card| async move {
             let (bus, bus_id) =
                 card.bus_id().await.ok().map(|v| (Some(v.bus), Some(v.id))).unwrap_or((None, None));
-            tab.row([
+            [
                 card.id().to_string(),
                 card.driver().await.ok().unwrap_or_else(dot),
                 bus.unwrap_or_else(dot),
                 bus_id.unwrap_or_else(dot),
-            ]);
-        }
-        let r = Some(tab.into());
+            ]
+        }))
+        .await;
+        let mut tab = Table::new(&["DRM", "Driver", "Bus", "Bus id"]);
+        tab.rows(rows);
+        let r = Some(tab.format());
         log::trace!("drm summary table done");
         r
     }

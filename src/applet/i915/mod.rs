@@ -28,6 +28,10 @@ impl Applet for I915 {
         "915"
     }
 
+    fn bin(&self) -> Option<&'static str> {
+        Some("k915")
+    }
+
     fn about(&self) -> &'static str {
         "View or set i915 values"
     }

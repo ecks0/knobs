@@ -83,6 +83,10 @@ impl Applet for Cpu {
         "cpu"
     }
 
+    fn bin(&self) -> Option<&'static str> {
+        Some("kcpu")
+    }
+
     fn about(&self) -> &'static str {
         "View or set cpu values"
     }

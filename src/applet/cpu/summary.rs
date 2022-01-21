@@ -1,5 +1,4 @@
 use futures::future::{join_all, FutureExt as _};
-use futures::stream::{self, StreamExt as _};
 use measurements::Frequency;
 use syx::cpu::Values as Cpu;
 use syx::cpufreq::Values as Cpufreq;
@@ -20,7 +19,7 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<Strin
         log::trace!("cpu summary cpu_cpufreq none");
         None
     } else {
-        let futs = cpus.into_iter().map(|cpu| {
+        let rows = join_all(cpus.into_iter().map(|cpu| {
             let cpufreq = cpufreqs
                 .iter()
                 .position(|cpufreq| cpufreq.id() == cpu.id())
@@ -44,14 +43,14 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<Strin
                 }
                 row
             }
-        });
+        }))
+        .await;
+        drop(cpufreqs);
         let mut tab = Table::new(&[
             "CPU", "Online", "Governor", "Cur", "Min", "Max", "Min lim", "Max lim",
         ]);
-        for row in join_all(futs).await {
-            tab.row(row);
-        }
-        let r = Some(tab.into());
+        tab.rows(rows);
+        let r = Some(tab.format());
         log::trace!("cpu summary cpu_cpufreq done");
         r
     }
@@ -63,20 +62,14 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
         log::trace!("cpu summary governors none");
         None
     } else {
-        let values: Vec<_> = stream::iter(cpufreqs.iter())
-            .then(|v| async move {
-                let id = v.id().to_string();
-                let govs = v
-                    .scaling_available_governors()
-                    .await
-                    .ok()
-                    .map(|g| g.join(" "))
-                    .unwrap_or_else(dot);
-                (id, govs)
-            })
-            .collect()
-            .await;
-        let mut govs: Vec<_> = values.iter().map(|(_, g)| g.as_str()).collect();
+        let values = join_all(cpufreqs.into_iter().map(|v| async move {
+            let id = v.id().to_string();
+            let govs =
+                v.scaling_available_governors().await.ok().map(|g| g.join(" ")).unwrap_or_else(dot);
+            [id, govs]
+        }))
+        .await;
+        let mut govs: Vec<_> = values.iter().map(|[_, g]| g.as_str()).collect();
         govs.sort_unstable();
         govs.dedup();
         if govs.is_empty() || (govs.len() == 1 && govs[0] == DOT) {
@@ -87,11 +80,9 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
             if govs.len() == 1 {
                 tab.row(["all".to_string(), govs[0].to_string()]);
             } else {
-                for (id, govs) in values {
-                    tab.row([id.to_string(), govs]);
-                }
+                tab.rows(values);
             }
-            let r = Some(tab.into());
+            let r = Some(tab.format());
             log::trace!("cpu summary governors done");
             r
         }
@@ -118,23 +109,21 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
         log::trace!("cpu summary epb_epp none");
         None
     } else {
-        let values: Vec<_> = stream::iter(pstates.iter())
-            .then(|v| async move {
-                let id = v.id().to_string();
-                let epb = v
-                    .energy_perf_bias()
-                    .await
-                    .ok()
-                    .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_else(dot);
-                let epp = v.energy_performance_preference().await.ok().unwrap_or_else(dot);
-                (id, epb, epp)
-            })
-            .collect()
-            .await;
+        let values = join_all(pstates.into_iter().map(|v| async move {
+            let id = v.id().to_string();
+            let epb = v
+                .energy_perf_bias()
+                .await
+                .ok()
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(dot);
+            let epp = v.energy_performance_preference().await.ok().unwrap_or_else(dot);
+            [id, epb, epp]
+        }))
+        .await;
         let mut epb_epp: Vec<_> =
-            values.iter().map(|(_, epb, epp)| (epb.as_str(), epp.as_str())).collect();
+            values.iter().map(|[_, epb, epp]| (epb.as_str(), epp.as_str())).collect();
         epb_epp.sort_unstable();
         epb_epp.dedup();
         if epb_epp.is_empty() || (epb_epp.len() == 1 && epb_epp[0] == (DOT, DOT)) {
@@ -146,11 +135,9 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
                 let (epb, epp) = epb_epp[0];
                 tab.row(["all".to_string(), epb.to_string(), epp.to_string()]);
             } else {
-                for (id, epb, epp) in values {
-                    tab.row([id, epb, epp]);
-                }
+                tab.rows(values);
             }
-            let r = Some(tab.into());
+            let r = Some(tab.format());
             log::trace!("cpu summary epb_epp done");
             r
         }
@@ -163,20 +150,18 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
         log::trace!("cpu summary epps none");
         None
     } else {
-        let values: Vec<_> = stream::iter(pstates.iter())
-            .then(|v| async move {
-                let id = v.id().to_string();
-                let prefs = v
-                    .energy_performance_available_preferences()
-                    .await
-                    .ok()
-                    .map(|p| p.join(" "))
-                    .unwrap_or_else(dot);
-                (id, prefs)
-            })
-            .collect()
-            .await;
-        let mut epps: Vec<_> = values.iter().map(|(_, epps)| epps.as_str()).collect();
+        let values = join_all(pstates.into_iter().map(|v| async move {
+            let id = v.id().to_string();
+            let prefs = v
+                .energy_performance_available_preferences()
+                .await
+                .ok()
+                .map(|p| p.join(" "))
+                .unwrap_or_else(dot);
+            [id, prefs]
+        }))
+        .await;
+        let mut epps: Vec<_> = values.iter().map(|[_, epps]| epps.as_str()).collect();
         epps.sort_unstable();
         epps.dedup();
         if epps.is_empty() || (epps.len() == 1 && epps[0] == DOT) {
@@ -187,11 +172,9 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
             if epps.len() == 1 {
                 tab.row(["all".to_string(), epps[0].to_string()]);
             } else {
-                for (id, epps) in values {
-                    tab.row([id, epps]);
-                }
+                tab.rows(values);
             }
-            let r = Some(tab.into());
+            let r = Some(tab.format());
             log::trace!("cpu summary epps done");
             r
         }

@@ -19,7 +19,7 @@ impl Applet for Install {
         "install"
     }
 
-    fn bin(&self) -> Option<String> {
+    fn bin(&self) -> Option<&'static str> {
         None
     }
 

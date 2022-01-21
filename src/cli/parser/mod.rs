@@ -12,10 +12,9 @@ use std::time::Duration;
 
 use measurements::{Frequency, Power};
 
-use crate::applet::rapl::ConstraintIds as RaplConstraintIds;
+use crate::applet::RaplConstraintIds;
 pub(crate) use crate::cli::parser::drm::{DrmDriver, I915Driver, NvmlDriver};
 use crate::cli::parser::number::Integer;
-use crate::cli::parser::power::Watts;
 use crate::{Error, Result};
 
 #[derive(Debug)]
@@ -118,7 +117,7 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn watts(&self, name: &str) -> Result<Option<Power>> {
         self.str(name)
-            .map(Watts::from_str)
+            .map(power::Watts::from_str)
             .transpose()
             .map(|v| v.map(Into::into))
             .map_err(|e| Error::parse_flag(e, name))

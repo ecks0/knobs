@@ -36,6 +36,10 @@ impl Applet for Rapl {
         "rapl"
     }
 
+    fn bin(&self) -> Option<&'static str> {
+        Some("krapl")
+    }
+
     fn about(&self) -> &'static str {
         "View or set rapl values"
     }

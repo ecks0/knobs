@@ -56,8 +56,7 @@ async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
-    let futs = zones.iter().map(|v| energy_uj(v.id(), interval, scale));
-    let r = join_all(futs).await;
+    let r = join_all(zones.iter().map(|v| energy_uj(v.id(), interval, scale))).await;
     log::trace!("rapl summary energy_ujs done");
     r
 }
@@ -70,6 +69,24 @@ async fn table() -> Option<String> {
         None
     } else {
         zones.sort_by_key(|v| v.id());
+        let energy_ujs = energy_ujs(&zones).await;
+        let rows = join_all(zones.into_iter().map(|zone| {
+            let energy_uj = energy_ujs.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
+            async move {
+                let (long_lim, long_win) = limit_window(&zone, LONG_TERM).await;
+                let (short_lim, short_win) = limit_window(&zone, SHORT_TERM).await;
+                [
+                    zone_id(zone.id()),
+                    zone.name().await.ok().unwrap_or_else(dot),
+                    long_lim.map(uw).unwrap_or_else(dot),
+                    short_lim.map(uw).unwrap_or_else(dot),
+                    long_win.map(us).unwrap_or_else(dot),
+                    short_win.map(us).unwrap_or_else(dot),
+                    energy_uj.map(uw).unwrap_or_else(dot),
+                ]
+            }
+        }))
+        .await;
         let mut tab = Table::new(&[
             "RAPL",
             "Zone name",
@@ -79,22 +96,8 @@ async fn table() -> Option<String> {
             "Short win",
             "Usage",
         ]);
-        let energy_ujs = energy_ujs(&zones).await;
-        for zone in zones {
-            let (long_lim, long_win) = limit_window(&zone, LONG_TERM).await;
-            let (short_lim, short_win) = limit_window(&zone, SHORT_TERM).await;
-            let energy_uj = energy_ujs.iter().find(|v| v.0 == zone.id()).and_then(|v| v.1);
-            tab.row([
-                zone_id(zone.id()),
-                zone.name().await.ok().unwrap_or_else(dot),
-                long_lim.map(uw).unwrap_or_else(dot),
-                short_lim.map(uw).unwrap_or_else(dot),
-                long_win.map(us).unwrap_or_else(dot),
-                short_win.map(us).unwrap_or_else(dot),
-                energy_uj.map(uw).unwrap_or_else(dot),
-            ]);
-        }
-        let r = Some(tab.into());
+        tab.rows(rows);
+        let r = Some(tab.format());
         log::trace!("rapl summary table done");
         r
     }
