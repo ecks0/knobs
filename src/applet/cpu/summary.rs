@@ -14,7 +14,7 @@ fn khz(v: u64) -> String {
 }
 
 async fn not_found() -> Option<String> {
-    Some("No cpu devices found".to_string())
+    Some("No cpu devices found\n".to_string())
 }
 
 async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<String> {

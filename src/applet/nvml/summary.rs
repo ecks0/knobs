@@ -14,7 +14,7 @@ fn mw(v: u32) -> String {
 }
 
 async fn not_found() -> Option<String> {
-    Some("No nvml devices found".to_string())
+    Some("No nvml devices found\n".to_string())
 }
 
 async fn table() -> Option<String> {

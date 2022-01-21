@@ -11,7 +11,7 @@ use crate::util::format::{dot, Table};
 use crate::util::once;
 
 async fn not_found() -> Option<String> {
-    Some("No drm devices found".to_string())
+    Some("No drm devices found\n".to_string())
 }
 
 async fn table(cards: Vec<Card>) -> Option<String> {

@@ -62,7 +62,7 @@ async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
 }
 
 async fn not_found() -> Option<String> {
-    Some("No rapl devices found".to_string())
+    Some("No rapl devices found\n".to_string())
 }
 
 async fn table() -> Option<String> {

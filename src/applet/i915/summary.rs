@@ -10,7 +10,7 @@ fn mhz(v: u64) -> String {
 }
 
 async fn not_found() -> Option<String> {
-    Some("No i915 devices found".to_string())
+    Some("No i915 devices found\n".to_string())
 }
 
 async fn table() -> Option<String> {
