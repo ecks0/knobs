@@ -3,10 +3,18 @@
 Command-line utilities for controlling Linux performance settings.
 
 Knobs provides several utilities in one binary, in the manner of busybox.
-The utilities may be run via symlinks to the `knobs` binary, or as
-subcommands to the `knobs` binary.
+Utilities may be run via symlinks to the `knobs` binary, or as subcommands
+to the `knobs` binary.
 
-To install symlinks for `knobs` utilities alongside the `knobs` binary,
+| Subcommand | Utility | Function                |
+| ---------- | ------- | ----------------------- |
+| cpu        | kcpu    | View or set cpu values  |
+| rapl       | krapl   | View or set rapl values |
+| drm        | kdrm    | View drm values         |
+| 915        | k915    | View or set i915 values |
+| nvml       | knvml   | View or set nvml values |
+
+To install symlinks for utilities alongside the `knobs` binary,
 run:
 ```
 knobs install
@@ -21,8 +29,6 @@ knobs -h
 ```
 
 ## Utilities
-
-With no arguments, utilities print tables describing current device values.
 
 ### kcpu
 
