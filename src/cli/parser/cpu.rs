@@ -154,8 +154,7 @@ impl CpuIds {
             .into_iter()
             .collect();
         v.sort_unstable();
-        let r = Self(v);
-        Ok(r)
+        Ok(Self(v))
     }
 }
 

@@ -50,7 +50,7 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<Strin
             "CPU", "Online", "Governor", "Cur", "Min", "Max", "Min lim", "Max lim",
         ]);
         tab.rows(rows);
-        let r = Some(tab.format());
+        let r = Some(tab.into());
         log::trace!("cpu summary cpu_cpufreq done");
         r
     }
@@ -82,7 +82,7 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
             } else {
                 tab.rows(values);
             }
-            let r = Some(tab.format());
+            let r = Some(tab.into());
             log::trace!("cpu summary governors done");
             r
         }
@@ -137,7 +137,7 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
             } else {
                 tab.rows(values);
             }
-            let r = Some(tab.format());
+            let r = Some(tab.into());
             log::trace!("cpu summary epb_epp done");
             r
         }
@@ -174,7 +174,7 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
             } else {
                 tab.rows(values);
             }
-            let r = Some(tab.format());
+            let r = Some(tab.into());
             log::trace!("cpu summary epps done");
             r
         }

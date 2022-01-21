@@ -52,7 +52,7 @@ async fn table() -> Option<String> {
             "Max lim",
         ]);
         tab.rows(rows);
-        let r = Some(tab.format());
+        let r = Some(tab.into());
         log::trace!("nvml summary table done");
         r
     }

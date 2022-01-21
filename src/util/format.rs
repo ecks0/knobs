@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use comfy_table as ct;
 use measurements::{Frequency, Power};
 
@@ -59,37 +57,29 @@ impl<'a> Table<'a> {
             self.row(row);
         }
     }
-
-    pub(crate) fn format(self) -> String {
-        self.to_string()
-    }
 }
 
-impl<'a> Display for Table<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let seps: Vec<_> = self
+impl<'a> From<Table<'a>> for String {
+    fn from(v: Table<'a>) -> Self {
+        let seps: Vec<_> = v
             .header
             .iter()
             .enumerate()
             .map(|(i, h)| {
                 let h = h.chars().count();
-                let c = self.rows.iter().fold(h, |a, v| v[i].chars().count().max(a));
-                Self::LINE.repeat(c)
+                let c = v.rows.iter().fold(h, |a, v| v[i].chars().count().max(a));
+                Table::LINE.repeat(c)
             })
             .collect();
         let mut tab = ct::Table::new();
         tab.load_preset(ct::presets::NOTHING);
-        tab.set_header(self.header);
+        tab.set_header(v.header);
         tab.add_row(seps);
-        for row in &self.rows {
+        for row in v.rows {
             tab.add_row(row);
         }
-        writeln!(f, "{}", tab)
-    }
-}
-
-impl<'a> From<Table<'a>> for String {
-    fn from(v: Table<'a>) -> Self {
-        v.to_string()
+        let mut r = tab.to_string();
+        r.push('\n');
+        r
     }
 }

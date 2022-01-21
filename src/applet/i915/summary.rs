@@ -24,7 +24,7 @@ async fn table() -> Option<String> {
         log::trace!("i915 summary table none");
         None
     } else {
-        let rows = join_all(cards.iter().map(|card| async move {
+        let rows = join_all(cards.into_iter().map(|card| async move {
             [
                 card.id().to_string(),
                 "i915".to_string(),
@@ -42,7 +42,7 @@ async fn table() -> Option<String> {
             "DRM", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
         ]);
         tab.rows(rows);
-        let r = Some(tab.format());
+        let r = Some(tab.into());
         log::trace!("i915 summary table done");
         r
     }

@@ -1,7 +1,5 @@
 mod parser;
 
-use std::io::Write as _;
-
 use clap::ErrorKind as ClapErrorKind;
 use futures::future::join_all;
 use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
@@ -14,6 +12,7 @@ use crate::{Error, Result};
 pub(crate) const NAME: &str = "knobs";
 
 fn config_logging() {
+    use std::io::Write as _;
     let env = env_logger::Env::default()
         .filter_or(var_name("LOG"), "error")
         .write_style_or(var_name("LOG_STYLE"), "never");
@@ -21,7 +20,7 @@ fn config_logging() {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{} {} [{:>32}] {}",
+                "{} {} [{:>30}] {}",
                 chrono::Local::now().format("%H:%M:%S%.6f"),
                 record.level().to_string().chars().next().unwrap_or('-'),
                 record.target(),
@@ -84,17 +83,6 @@ impl<'a> From<&'a Arg> for clap::Arg<'a> {
     }
 }
 
-fn make_clap_app<'a, S>(name: S) -> clap::App<'a>
-where
-    S: Into<String>,
-{
-    clap::App::new(name)
-        .color(clap::ColorChoice::Never)
-        .setting(clap::AppSettings::DeriveDisplayOrder)
-        .setting(clap::AppSettings::DisableHelpSubcommand)
-        .version(clap::crate_version!())
-}
-
 async fn format(formatters: Vec<Formatter>) {
     let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
     let mut ok = false;
@@ -109,6 +97,17 @@ async fn format(formatters: Vec<Formatter>) {
     if ok {
         stdout.flush().await.unwrap();
     }
+}
+
+fn make_clap_app<'a, S>(name: S) -> clap::App<'a>
+where
+    S: Into<String>,
+{
+    clap::App::new(name)
+        .color(clap::ColorChoice::Never)
+        .setting(clap::AppSettings::DeriveDisplayOrder)
+        .setting(clap::AppSettings::DisableHelpSubcommand)
+        .version(clap::crate_version!())
 }
 
 async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Result<()> {
@@ -147,7 +146,8 @@ async fn run_binary(bin: &str, argv: Vec<String>, applets: Vec<Box<dyn Applet>>)
         applets.into_iter().find(|a| a.bin().map(|v| bin == v).unwrap_or(false)).unwrap();
     let applet_args = applet.args();
     let clap_args: Vec<_> = applet_args.iter().map(clap::Arg::from).collect();
-    let matches = make_clap_app(bin).args(clap_args).try_get_matches_from(argv)?;
+    let matches =
+        make_clap_app(bin).args(clap_args).about(applet.about()).try_get_matches_from(argv)?;
     drop(applet_args);
     let parser = Parser::from(&matches);
     applet.run(parser).await?;

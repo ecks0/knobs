@@ -29,7 +29,7 @@ async fn table(cards: Vec<Card>) -> Option<String> {
         .await;
         let mut tab = Table::new(&["DRM", "Driver", "Bus", "Bus id"]);
         tab.rows(rows);
-        let r = Some(tab.format());
+        let r = Some(tab.into());
         log::trace!("drm summary table done");
         r
     }

@@ -97,7 +97,7 @@ async fn table() -> Option<String> {
             "Usage",
         ]);
         tab.rows(rows);
-        let r = Some(tab.format());
+        let r = Some(tab.into());
         log::trace!("rapl summary table done");
         r
     }
