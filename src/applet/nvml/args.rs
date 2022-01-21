@@ -23,7 +23,7 @@ const GPU_MAX_HELP: &str = "Set nvml max gpu freq in megahertz";
 const GPU_RESET_HELP: &str = "Reset nvml gpu freq to default";
 const POWER_HELP: &str = "Set nvml device power limit in watts";
 const POWER_RESET_HELP: &str = "Reset nvml power limit to default";
-const QUIET_HELP: &str = "Do not print tables";
+const QUIET_HELP: &str = "Do not print table";
 
 #[rustfmt::skip]
 fn card_help_long() -> String {
