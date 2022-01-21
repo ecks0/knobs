@@ -97,7 +97,7 @@ impl Applet for Cpu {
 
     async fn run(&mut self, p: Parser<'_>) -> Result<()> {
         log::trace!("cpu run start");
-        let mut values = Values::from_parser(p).await?;
+        let values = Values::from_parser(p).await?;
         let has_policy_values = values.has_policy_values();
         self.quiet = values.quiet;
         if let Some(ids) = values.ids {
@@ -107,8 +107,8 @@ impl Applet for Cpu {
                     wait_for_onoff().await;
                 }
                 for id in ids.clone() {
-                    if let Some(v) = values.gov.take() {
-                        syx::cpufreq::set_scaling_governor(id, &v).await?;
+                    if let Some(v) = values.gov.as_ref() {
+                        syx::cpufreq::set_scaling_governor(id, v).await?;
                     }
                     if let Some(v) = values.min {
                         let v = v.as_kilohertz().trunc() as u64;
@@ -121,8 +121,8 @@ impl Applet for Cpu {
                     if let Some(v) = values.epb {
                         syx::intel_pstate::policy::set_energy_perf_bias(id, v).await?;
                     }
-                    if let Some(v) = values.epp.take() {
-                        syx::intel_pstate::policy::set_energy_performance_preference(id, &v)
+                    if let Some(v) = values.epp.as_ref() {
+                        syx::intel_pstate::policy::set_energy_performance_preference(id, v)
                             .await?;
                     }
                 }
