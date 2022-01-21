@@ -47,6 +47,25 @@ OPTIONS:
     -h, --help         Print help information
     -V, --version      Print version information
 ```
+```
+$ kcpu
+ CPU  Online  Governor   Cur      Min      Max      Min lim  Max lim
+ ---  ------  ---------  -------  -------  -------  -------  -------
+ 0    •       schedutil  1.1 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 1    true    schedutil  1.2 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 2    true    schedutil  1.5 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 3    true    schedutil  1.2 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 4    false   schedutil  1.1 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 5    false   schedutil  1.3 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 6    false   schedutil  1.1 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+ 7    false   schedutil  1.2 GHz  400 MHz  2.0 GHz  400 MHz  4.4 GHz
+
+ CPU  Available governors
+ ---  ---------------------------------------------------------------
+ all  conservative ondemand userspace powersave performance schedutil
+
+ intel_pstate: passive
+```
 
 ### krapl
 
@@ -69,6 +88,15 @@ OPTIONS:
     -h, --help                Print help information
     -V, --version             Print version information
 ```
+```
+$ krapl
+ RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
+ ----  ---------  --------  ---------  -----------  ---------  ------
+ 0     package-0  4 W       15 W       27983872 μs  2440 μs    659 mW
+ 0:0   core       0 W       •          976 μs       •          89 mW
+ 0:1   uncore     0 W       •          976 μs       •          2 mW
+```
+
 ### kdrm
 
 View drm, i915, and nvml values.
@@ -83,6 +111,21 @@ USAGE:
 OPTIONS:
     -h, --help       Print help information
     -V, --version    Print version information
+```
+```
+$ kdrm
+ DRM  Driver  Bus  Bus id
+ ---  ------  ---  ------------
+ 0    nvidia  pci  0000:01:00.0
+ 1    i915    pci  0000:00:02.0
+
+ DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
+ ---  ------  -------  -------  ---------  ---------  -------  -------
+ 0    nvidia  360 MHz  2.1 GHz  8.1 W      •          •        •
+
+ DRM  Driver  Actual   Req'd    Min      Max      Boost       Min lim  Max lim
+ ---  ------  -------  -------  -------  -------  ----------  -------  -------
+ 1    i915    350 MHz  350 MHz  350 MHz  900 MHz  1000.0 MHz  350 MHz  1.1 GHz
 ```
 
 ### k915
@@ -104,6 +147,12 @@ OPTIONS:
     -q, --quiet          Do not print table
     -h, --help           Print help information
     -V, --version        Print version information
+```
+```
+$ k915
+ DRM  Driver  Actual   Req'd    Min      Max      Boost       Min lim  Max lim
+ ---  ------  -------  -------  -------  -------  ----------  -------  -------
+ 1    i915    350 MHz  350 MHz  350 MHz  900 MHz  1000.0 MHz  350 MHz  1.1 GHz
 ```
 
 ### knvml
@@ -127,4 +176,10 @@ OPTIONS:
     -q, --quiet            Do not print tables
     -h, --help             Print help information
     -V, --version          Print version information
+```
+```
+$ knvml
+ DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
+ ---  ------  -------  -------  ---------  ---------  -------  -------
+ 0    nvidia  1.1 GHz  2.1 GHz  27.1 W     •          •        •
 ```
