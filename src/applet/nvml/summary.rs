@@ -13,6 +13,10 @@ fn mw(v: u32) -> String {
     power(Power::from_milliwatts(v as f64))
 }
 
+async fn not_found() -> Option<String> {
+    Some("No nvml devices found".to_string())
+}
+
 async fn table() -> Option<String> {
     log::trace!("nvml summary table start");
     let cards = once::drm_cards().await;
@@ -26,7 +30,7 @@ async fn table() -> Option<String> {
     .collect();
     if cards.is_empty() {
         log::trace!("nvml summary table none");
-        None
+        not_found().await
     } else {
         let rows = join_all(cards.into_iter().map(|card| async move {
             [

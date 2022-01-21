@@ -10,6 +10,10 @@ use crate::applet::{Applet as _, Formatter};
 use crate::util::format::{dot, Table};
 use crate::util::once;
 
+async fn not_found() -> Option<String> {
+    Some("No drm devices found".to_string())
+}
+
 async fn table(cards: Vec<Card>) -> Option<String> {
     log::trace!("drm summary table start");
     if cards.is_empty() {
@@ -37,10 +41,11 @@ async fn table(cards: Vec<Card>) -> Option<String> {
 
 pub(super) async fn summary() -> Vec<Formatter> {
     log::trace!("drm summary start");
+    let mut formatters = vec![];
     let cards = once::drm_cards().await;
     if cards.is_empty() {
         log::trace!("drm summary none");
-        return vec![];
+        formatters.push(not_found().boxed());
     } else {
         let order: Vec<_> = stream::iter(&cards)
             .filter_map(|card| async move { card.driver().await.ok() })
@@ -55,7 +60,7 @@ pub(super) async fn summary() -> Vec<Formatter> {
             )
             .await
             .1;
-        let mut formatters = vec![table(cards).boxed()];
+        formatters.push(table(cards).boxed());
         for driver in order {
             match driver.as_str() {
                 "i915" => formatters.extend(I915::default().summary().await),
@@ -64,6 +69,6 @@ pub(super) async fn summary() -> Vec<Formatter> {
             }
         }
         log::trace!("drm summary done");
-        formatters
     }
+    formatters
 }

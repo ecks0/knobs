@@ -13,6 +13,10 @@ fn khz(v: u64) -> String {
     frequency(Frequency::from_kilohertz(v as f64))
 }
 
+async fn not_found() -> Option<String> {
+    Some("No cpu devices found".to_string())
+}
+
 async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<String> {
     log::trace!("cpu summary cpu_cpufreq start");
     if cpus.is_empty() {
@@ -183,19 +187,24 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
 
 pub(super) async fn summary() -> Vec<Formatter> {
     log::trace!("cpu summary start");
+    let mut formatters = vec![];
     let ids: Vec<_> = once::cpu_ids().await;
-    let cpus: Vec<_> = ids.clone().into_iter().map(Cpu::new).collect();
-    let cpufreqs: Vec<_> = ids.clone().into_iter().map(Cpufreq::new).collect();
-    let pstates: Vec<_> = ids.into_iter().map(PstatePolicy::new).collect();
-    let system = PstateSystem::default();
-    log::trace!("cpu summary formatters");
-    let formatters: Vec<Formatter> = vec![
-        cpu_cpufreq(cpus, cpufreqs.clone()).boxed(),
-        governors(cpufreqs).boxed(),
-        pstate_status(system.clone()).boxed(),
-        epb_epp(system.clone(), pstates.clone()).boxed(),
-        epps(system, pstates).boxed(),
-    ];
-    log::trace!("cpu summary done");
+    if ids.is_empty() {
+        formatters.push(not_found().boxed());
+    } else {
+        let cpus: Vec<_> = ids.clone().into_iter().map(Cpu::new).collect();
+        let cpufreqs: Vec<_> = ids.clone().into_iter().map(Cpufreq::new).collect();
+        let pstates: Vec<_> = ids.into_iter().map(PstatePolicy::new).collect();
+        let system = PstateSystem::default();
+        log::trace!("cpu summary formatters");
+        formatters.extend([
+            cpu_cpufreq(cpus, cpufreqs.clone()).boxed(),
+            governors(cpufreqs).boxed(),
+            pstate_status(system.clone()).boxed(),
+            epb_epp(system.clone(), pstates.clone()).boxed(),
+            epps(system, pstates).boxed(),
+        ]);
+        log::trace!("cpu summary done");
+    }
     formatters
 }
