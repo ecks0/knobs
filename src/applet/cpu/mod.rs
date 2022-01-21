@@ -101,44 +101,49 @@ impl Applet for Cpu {
         let has_policy_values = values.has_policy_values();
         self.quiet = values.quiet;
         if let Some(ids) = values.ids {
-            if has_policy_values {
-                let onlined = set_online(ids.clone()).await?;
-                if !onlined.is_empty() {
-                    wait_for_onoff().await;
-                }
-                for id in ids.clone() {
-                    if let Some(v) = values.gov.as_ref() {
-                        syx::cpufreq::set_scaling_governor(id, v).await?;
-                    }
-                    if let Some(v) = values.min {
-                        let v = v.as_kilohertz().trunc() as u64;
-                        syx::cpufreq::set_scaling_min_freq(id, v).await?;
-                    }
-                    if let Some(v) = values.max {
-                        let v = v.as_kilohertz().trunc() as u64;
-                        syx::cpufreq::set_scaling_max_freq(id, v).await?;
-                    }
-                    if let Some(v) = values.epb {
-                        syx::intel_pstate::policy::set_energy_perf_bias(id, v).await?;
-                    }
-                    if let Some(v) = values.epp.as_ref() {
-                        syx::intel_pstate::policy::set_energy_performance_preference(id, v)
-                            .await?;
-                    }
-                }
-                if !onlined.is_empty() || values.on.is_some() {
-                    wait_for_policy().await;
-                }
-                if !onlined.is_empty() {
-                    set_offline(onlined).await?;
-                    if values.on.is_some() {
+            if !ids.is_empty() {
+                if has_policy_values {
+                    let onlined = set_online(ids.clone()).await?;
+                    if !onlined.is_empty() {
                         wait_for_onoff().await;
                     }
+                    let min = values.min.map(|v| v.as_kilohertz().trunc() as u64);
+                    let max = values.max.map(|v| v.as_kilohertz().trunc() as u64);
+                    for id in ids.clone() {
+                        if let Some(v) = values.gov.as_ref() {
+                            syx::cpufreq::set_scaling_governor(id, v).await?;
+                        }
+                        if let Some(v) = min {
+                            syx::cpufreq::set_scaling_min_freq(id, v).await?;
+                        }
+                        if let Some(v) = max {
+                            syx::cpufreq::set_scaling_max_freq(id, v).await?;
+                        }
+                        if let Some(v) = values.epb {
+                            syx::intel_pstate::policy::set_energy_perf_bias(id, v).await?;
+                        }
+                        if let Some(v) = values.epp.as_ref() {
+                            syx::intel_pstate::policy::set_energy_performance_preference(id, v)
+                                .await?;
+                        }
+                    }
+                    if !onlined.is_empty() || values.on.is_some() || self.quiet.is_none() {
+                        wait_for_policy().await;
+                    }
+                    if !onlined.is_empty() {
+                        set_offline(onlined).await?;
+                        if values.on.is_some() || self.quiet.is_none() {
+                            wait_for_onoff().await;
+                        }
+                    }
                 }
-            }
-            if let Some(on) = values.on {
-                for id in ids {
-                    syx::cpu::set_online(id, on).await?;
+                if let Some(on) = values.on {
+                    for id in ids {
+                        syx::cpu::set_online(id, on).await?;
+                    }
+                    if self.quiet.is_none() {
+                        wait_for_onoff().await;
+                    }
                 }
             }
         }
