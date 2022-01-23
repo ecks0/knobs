@@ -18,6 +18,9 @@ pub enum Error {
     #[error("failed to create one or more symlinks")]
     Install,
 
+    #[error("failed to remove one or more symlinks")]
+    Uninstall,
+
     #[error("{0}")]
     Syx(#[from] SyxError),
 

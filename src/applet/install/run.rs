@@ -46,5 +46,9 @@ pub(super) async fn run(values: super::Values) -> Result<()> {
     stdout.flush().await.unwrap();
     stderr.flush().await.unwrap();
     log::trace!("install run done");
-    if ok { Ok(()) } else { Err(Error::Install) }
+    if ok {
+        Ok(())
+    } else {
+        Err(if values.uninstall.is_none() { Error::Install } else { Error::Uninstall })
+    }
 }
