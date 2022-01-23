@@ -126,12 +126,14 @@ impl App {
 
     async fn run(mut self) -> Result<()> {
         log::trace!("app run start");
-        if self.is_binary() {
-            self.make_binary_runners().await?;
-        } else {
-            self.make_subcommand_runners().await?;
-        };
-        self.join_runners().await?;
+        if !self.argv.is_empty() {
+            if self.is_binary() {
+                self.make_binary_runners().await?;
+            } else {
+                self.make_subcommand_runners().await?;
+            }
+            self.join_runners().await?;
+        }
         if !self.quiet {
             self.format().await;
         }
