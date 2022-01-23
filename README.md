@@ -62,6 +62,11 @@ krapl \
     - for package 0, constraint 0, set power limit to 7 watts
     - for package 0, constraint 1, set power limit to 15 watts
 
+## Environment variables
+
+- `KNOBS_LOG` - Set to `trace` to see what's happening under the hood. Default `error`.
+- `KNOBS_RAPL_INTERVAL_MS` - set to a value between `1` and `1000` to control rapl `energy_uj` sample interval. Default `200`.
+
 ## Utility reference
 
 ### kcpu
