@@ -53,7 +53,7 @@ impl Applet for Rapl {
         Ok(r)
     }
 
-    async fn format(&self) -> Option<Vec<Formatter>> {
-        Some(format::format().await)
+    async fn format(&self) -> Vec<Formatter> {
+        format::format().await
     }
 }
