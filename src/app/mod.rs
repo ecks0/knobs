@@ -260,7 +260,9 @@ impl App {
         // Process each applet's formatters in a separate task. Testing shows that
         // this can save a few millis when rendering all tables.
         let formatters = join_all(ctors).await.into_iter();
-        let tasks = formatters.map(|futs| tokio::spawn(join_all(futs)));
+        let tasks = formatters.filter_map(|futs| {
+            if futs.is_empty() { None } else { Some(tokio::spawn(join_all(futs))) }
+        });
         let outputs: Vec<_> = join_all(tasks)
             .await
             .into_iter()
