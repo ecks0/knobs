@@ -202,7 +202,7 @@ pub(super) async fn format() -> Vec<Formatter> {
             epb_epp(system.clone(), pstates.clone()).boxed(),
             epps(system, pstates).boxed(),
         ]);
-        log::trace!("cpu format done");
     }
+    log::trace!("cpu format done");
     formatters
 }

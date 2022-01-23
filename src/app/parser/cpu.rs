@@ -145,8 +145,7 @@ impl CpuIds {
     pub(super) async fn from_str(s: &str) -> Result<Self> {
         log::trace!("parse cpu ids start");
         let mut v: Vec<_> = stream::iter(s.split(','))
-            .map(Ok)
-            .and_then(CpuIdRange::from_str)
+            .then(CpuIdRange::from_str)
             .try_fold(HashSet::new(), |mut set, v| async move {
                 set.extend(v);
                 Ok(set)

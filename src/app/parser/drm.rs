@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Display;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -180,18 +181,18 @@ impl<T> DrmIds<T>
 where
     T: DrmDriver,
 {
-    pub(super) async fn from_str(v: &str) -> Result<Self> {
+    pub(super) async fn from_str(s: &str) -> Result<Self> {
         log::trace!("parse drm ids start");
-        let mut v: Vec<_> = stream::iter(v.split(','))
-            .map(Result::Ok)
-            .and_then(|v| async move {
-                let r: u64 = DrmId::<T>::from_str(v).await?.into();
-                Ok(r)
+        let mut v: Vec<_> = stream::iter(s.split(','))
+            .then(DrmId::<T>::from_str)
+            .try_fold(HashSet::new(), |mut set, v| async move {
+                set.insert(u64::from(v));
+                Ok(set)
             })
-            .try_collect()
-            .await?;
+            .await?
+            .into_iter()
+            .collect();
         v.sort_unstable();
-        v.dedup();
         let r = Self(v, PhantomData);
         log::trace!("parse drm ids done");
         Ok(r)

@@ -41,7 +41,7 @@ impl Applet for Install {
         Ok(r)
     }
 
-    async fn format(&self) -> Option<Vec<Formatter>> {
-        None
+    async fn format(&self) -> Vec<Formatter> {
+        vec![]
     }
 }

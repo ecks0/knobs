@@ -254,13 +254,12 @@ impl App {
 
         #[rustfmt::skip]
         // Process all formatters in the current task.
-        // let formatters = join_all(ctors).await.into_iter().flatten().flatten();
+        // let formatters = join_all(ctors).await.into_iter().flatten();
         // let outputs: Vec<_> = join_all(formatters).await.into_iter().flatten().collect();
 
         // Process each applet's formatters in a separate task. Testing shows that
-        // this can save a few millis when rendering all tables, probably because
-        // the cpu tables are so busy.
-        let formatters = join_all(ctors).await.into_iter().flatten();
+        // this can save a few millis when rendering all tables.
+        let formatters = join_all(ctors).await.into_iter();
         let tasks = formatters.map(|futs| tokio::spawn(join_all(futs)));
         let outputs: Vec<_> = join_all(tasks)
             .await
