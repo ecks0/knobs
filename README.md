@@ -68,6 +68,8 @@ krapl \
   -p 0 -c 1 -l 15
 ```
 
+_Explanation_
+
 - `knobs cpu` / `kcpu`
     - for all cpu ids, set governor to `schedutil` and max freq to 2000 mhz
     - for cpu ids 4 and up, set offline
