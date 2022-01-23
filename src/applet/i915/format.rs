@@ -9,10 +9,6 @@ fn mhz(v: u64) -> String {
     frequency(Frequency::from_megahertz(v as f64))
 }
 
-async fn not_found() -> Option<String> {
-    Some("No i915 devices found\n".to_string())
-}
-
 async fn table() -> Option<String> {
     log::trace!("i915 format table start");
     let cards = once::drm_cards().await;
@@ -26,7 +22,7 @@ async fn table() -> Option<String> {
     .collect();
     if cards.is_empty() {
         log::trace!("i915 format table none");
-        not_found().await
+        None
     } else {
         let rows = join_all(cards.into_iter().map(|card| async move {
             [

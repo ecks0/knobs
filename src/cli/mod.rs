@@ -102,17 +102,22 @@ fn app_args() -> Vec<Arg> {
 
 async fn format(formatters: Vec<Formatter>) {
     log::trace!("format start");
-    let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
-    let mut ok = false;
-    for output in join_all(formatters).await.into_iter().flatten() {
-        if ok {
-            stdout.write_all("\n".as_bytes()).await.unwrap();
-        } else {
-            ok = true;
+    let outputs: Vec<_> = join_all(formatters).await.into_iter().flatten().collect();
+    if outputs.is_empty() {
+        let mut stdout = stdout();
+        stdout.write_all("No devices found\n".as_bytes()).await.unwrap();
+        stdout.flush().await.unwrap();
+    } else {
+        let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
+        let mut ok = false;
+        for output in outputs {
+            if ok {
+                stdout.write_all("\n".as_bytes()).await.unwrap();
+            } else {
+                ok = true;
+            }
+            stdout.write_all(output.as_bytes()).await.unwrap();
         }
-        stdout.write_all(output.as_bytes()).await.unwrap();
-    }
-    if ok {
         stdout.flush().await.unwrap();
     }
     log::trace!("format done");
@@ -164,6 +169,7 @@ async fn run_subcommands<'a>(
                     .try_get_matches_from(argv)?;
                 if Parser::from(&matches).flag(QUIET).is_some() {
                     quiet = true;
+                    subcmds.clear();
                 }
                 if let Some((subcmd, subcmd_matches)) = matches.subcommand() {
                     let applet = applets
@@ -173,32 +179,34 @@ async fn run_subcommands<'a>(
                     let parser = Parser::from(subcmd_matches);
                     let runner = applet.run(parser).await?;
                     runners.push((i, runner));
-                    subcmds.insert(applet.subcommand());
+                    if !quiet {
+                        subcmds.insert(applet.subcommand());
+                    }
                 }
                 Ok(())
             }
             .await
-            .map_err(|e| Error::group(e, i))?;
+            .map_err(|e| Error::group(e, i + 1))?;
         }
         Result::Ok((quiet, subcmds, runners))
     }
     .await?;
-    let formatters = async move {
-        let mut formatters = vec![];
-        if !quiet {
-            for applet in applets {
-                if subcmds.is_empty() || subcmds.contains(applet.subcommand()) {
-                    formatters.extend(applet.format().await);
-                }
-            }
-        }
-        formatters
-    }
-    .await;
     for (i, runner) in runners {
-        runner.await.map_err(|e| Error::group(e, i))?;
+        runner.await.map_err(|e| Error::group(e, i + 1))?;
     }
-    format(formatters).await;
+    if !quiet {
+        let formatters = async move {
+            let mut formatters = vec![];
+                for applet in applets {
+                    if subcmds.is_empty() || subcmds.contains(applet.subcommand()) {
+                        formatters.extend(applet.format().await);
+                    }
+                }
+            formatters
+        }
+        .await;
+        format(formatters).await;
+    }
     log::trace!("run_subcommand done");
     Ok(())
 }
@@ -237,19 +245,19 @@ async fn run_binary<'a>(
                 Ok(())
             }
             .await
-            .map_err(|e| Error::group(e, i))?;
+            .map_err(|e| Error::group(e, i + 1))?;
         }
         Result::Ok((quiet, runners))
     }
     .await?;
-    let formatters = async move {
-        if quiet { vec![] } else { applet.format().await }
-    }
-    .await;
     for (i, runner) in runners {
-        runner.await.map_err(|e| Error::group(e, i))?;
+        runner.await.map_err(|e| Error::group(e, i + 1))?;
     }
-    format(formatters).await;
+    if !quiet {
+        let formatters = applet.format().await;
+        drop(applet);
+        format(formatters).await;
+    }
     log::trace!("run_binary done");
     Ok(())
 }

@@ -61,16 +61,12 @@ async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     r
 }
 
-async fn not_found() -> Option<String> {
-    Some("No rapl devices found\n".to_string())
-}
-
 async fn table() -> Option<String> {
     log::trace!("rapl format table start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
         log::trace!("rapl format table none");
-        not_found().await
+        None
     } else {
         zones.sort_by_key(|v| v.id());
         let energy_ujs = energy_ujs(&zones).await;

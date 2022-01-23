@@ -13,10 +13,6 @@ fn khz(v: u64) -> String {
     frequency(Frequency::from_kilohertz(v as f64))
 }
 
-async fn not_found() -> Option<String> {
-    Some("No cpu devices found\n".to_string())
-}
-
 async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<String> {
     log::trace!("cpu format cpu_cpufreq start");
     if cpus.is_empty() {
@@ -193,9 +189,7 @@ pub(super) async fn format() -> Vec<Formatter> {
     log::trace!("cpu format start");
     let mut formatters = vec![];
     let ids: Vec<_> = once::cpu_ids().await;
-    if ids.is_empty() {
-        formatters.push(not_found().boxed());
-    } else {
+    if !ids.is_empty() {
         let cpus: Vec<_> = ids.clone().into_iter().map(Cpu::new).collect();
         let cpufreqs: Vec<_> = ids.clone().into_iter().map(Cpufreq::new).collect();
         let pstates: Vec<_> = ids.into_iter().map(PstatePolicy::new).collect();

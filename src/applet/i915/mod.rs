@@ -24,11 +24,11 @@ pub(crate) struct I915;
 #[async_trait]
 impl Applet for I915 {
     fn binary(&self) -> Option<&'static str> {
-        Some("k915")
+        Some("ki915")
     }
 
     fn subcommand(&self) -> &'static str {
-        "915"
+        "i915"
     }
 
     fn about(&self) -> &'static str {
