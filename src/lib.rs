@@ -18,13 +18,13 @@ pub enum Error {
     #[error("failed to create one or more symlinks")]
     Install,
 
-    #[error("error: {0}")]
+    #[error("{0}")]
     Syx(#[from] SyxError),
 
-    #[error("error: --{flag}: {error}")]
+    #[error("--{flag}: {error}")]
     ParseFlag { error: String, flag: String },
 
-    #[error("error: {0}")]
+    #[error("{0}")]
     ParseValue(String),
 
     #[error("argument group {1}: {0}")]
