@@ -71,6 +71,7 @@ pub(super) async fn run(values: super::Values) -> Result<()> {
                 }
                 let min = values.min.map(|v| v.as_kilohertz().trunc() as u64);
                 let max = values.max.map(|v| v.as_kilohertz().trunc() as u64);
+                log::trace!("cpu run policy start");
                 for id in ids.clone() {
                     if let Some(v) = values.gov.as_ref() {
                         syx::cpufreq::set_scaling_governor(id, v).await?;
@@ -88,6 +89,7 @@ pub(super) async fn run(values: super::Values) -> Result<()> {
                         syx::intel_pstate::policy::set_energy_performance_preference(id, v).await?;
                     }
                 }
+                log::trace!("cpu run policy done");
                 wait_for_policy().await;
                 if !onlined.is_empty() {
                     set_offline(onlined).await?;
@@ -95,9 +97,11 @@ pub(super) async fn run(values: super::Values) -> Result<()> {
                 }
             }
             if let Some(on) = values.on {
+                log::trace!("cpu run online start");
                 for id in ids {
                     syx::cpu::set_online(id, on).await?;
                 }
+                log::trace!("cpu run online done");
                 wait_for_onoff().await;
             }
         }
