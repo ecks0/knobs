@@ -28,7 +28,7 @@ impl Applet for Install {
     }
 
     fn about(&self) -> &'static str {
-        "Install utility symlinks"
+        "Install or uninstall utility symlinks"
     }
 
     fn args(&self) -> Vec<Arg> {
