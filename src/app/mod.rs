@@ -287,6 +287,23 @@ impl App {
 
 fn config_logging() {
     use std::io::Write as _;
+    use std::time::Duration;
+
+    fn fmt_dur(dur: Duration) -> String {
+        dur.as_micros()
+            .to_string()
+            .chars()
+            .rev()
+            .collect::<Vec<_>>()
+            .chunks(3)
+            .map(String::from_iter)
+            .collect::<Vec<_>>()
+            .join("_")
+            .chars()
+            .rev()
+            .collect()
+    }
+
     let env = env_logger::Env::default()
         .filter_or(var_name("LOG"), "error")
         .write_style_or(var_name("LOG_STYLE"), "never");
@@ -294,8 +311,8 @@ fn config_logging() {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{:>10} {} [{:>30}] {}",
-                counter::elapsed().as_micros(),
+                "{:>11} {} [{:>30}] {}",
+                fmt_dur(counter::elapsed()),
                 record.level().to_string().chars().next().unwrap_or('-'),
                 record.target(),
                 record.args()
