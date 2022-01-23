@@ -28,7 +28,7 @@ To a particular directory:
 knobs install /path/to/directory
 ```
 
-### Uninstalling symlink
+### Uninstalling symlinks
 
 Alongside the `knobs` binary:
 ```
