@@ -43,13 +43,14 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<Strin
                 }
                 row
             }
-        }))
-        .await;
+        }));
+        log::trace!("cpu format cpu_cpufreq spawn");
+        let rows = tokio::spawn(rows);
         drop(cpufreqs);
         let mut tab = Table::new(&[
             "CPU", "Online", "Governor", "Cur", "Min", "Max", "Min lim", "Max lim",
         ]);
-        tab.rows(rows);
+        tab.rows(rows.await.expect("cpu format cpu_cpufreq future"));
         let r = Some(tab.into());
         log::trace!("cpu format cpu_cpufreq done");
         r

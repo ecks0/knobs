@@ -251,26 +251,17 @@ impl App {
                 None
             }
         });
-
-        #[rustfmt::skip]
-        // Process all formatters in the current task.
-        // let formatters = join_all(ctors).await.into_iter().flatten();
-        // let outputs: Vec<_> = join_all(formatters).await.into_iter().flatten().collect();
-
-        // Process each applet's formatters in a separate task. Testing shows that
-        // this can save a few millis when rendering all tables.
-        let formatters = join_all(ctors).await.into_iter();
-        let tasks = formatters.filter_map(|futs| {
+        let futs = join_all(ctors).await.into_iter();
+        let tasks = futs.filter_map(|futs| {
             if futs.is_empty() { None } else { Some(tokio::spawn(join_all(futs))) }
         });
         let outputs: Vec<_> = join_all(tasks)
             .await
             .into_iter()
-            .map(|r| r.expect("formatter task"))
+            .map(|r| r.expect("app format future"))
             .flatten()
             .flatten()
             .collect();
-
         self.format_subcmds.clear();
         if !outputs.is_empty() {
             let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
