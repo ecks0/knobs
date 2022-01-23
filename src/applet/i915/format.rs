@@ -11,10 +11,15 @@ fn mhz(v: u64) -> String {
 
 async fn table() -> Option<String> {
     log::trace!("i915 format table start");
-    let cards = once::drm_cards().await;
-    let cards: Vec<_> = join_all(cards.into_iter().map(|card| async move {
-        let is_i915 = card.driver().await.ok().map(|v| v == "i915").unwrap_or(false);
-        if is_i915 { Some(syx::i915::Values::new(card.id())) } else { None }
+    let drm_cards = once::drm_cards().await;
+    let cards: Vec<_> = join_all(drm_cards.into_iter().map(|drm_card| async move {
+        let is_i915 = drm_card.driver().await.ok().map(|v| v == "i915").unwrap_or(false);
+        if is_i915 {
+            let id = drm_card.id();
+            Some((drm_card, syx::i915::Values::new(id)))
+        } else {
+            None
+        }
     }))
     .await
     .into_iter()
@@ -24,12 +29,11 @@ async fn table() -> Option<String> {
         log::trace!("i915 format table none");
         None
     } else {
-        let rows = join_all(cards.into_iter().map(|card| async move {
+        let rows = join_all(cards.into_iter().map(|(drm_card, card)| async move {
             [
-                card.id().to_string(),
-                "i915".to_string(),
+                drm_card.id().to_string(),
+                drm_card.bus_id().await.ok().map(|v| v.id).unwrap_or_else(dot),
                 card.act_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
-                card.cur_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.min_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.max_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
                 card.boost_freq_mhz().await.ok().map(mhz).unwrap_or_else(dot),
@@ -39,7 +43,14 @@ async fn table() -> Option<String> {
         }))
         .await;
         let mut tab = Table::new(&[
-            "DRM", "Driver", "Actual", "Req'd", "Min", "Max", "Boost", "Min lim", "Max lim",
+            "i915",
+            "Bus id",
+            "Gpu cur",
+            "Gpu min",
+            "Gpu max",
+            "Gpu boost",
+            "Min lim",
+            "Max lim",
         ]);
         tab.rows(rows);
         let r = Some(tab.into());

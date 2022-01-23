@@ -16,9 +16,14 @@ fn mw(v: u32) -> String {
 async fn table() -> Option<String> {
     log::trace!("nvml format table start");
     let cards = once::drm_cards().await;
-    let cards: Vec<_> = join_all(cards.into_iter().map(|card| async move {
-        let is_nvml = card.driver().await.ok().map(|v| v == "nvidia").unwrap_or(false);
-        if is_nvml { Some(syx::nvml::Values::new(card.id())) } else { None }
+    let cards: Vec<_> = join_all(cards.into_iter().map(|drm_card| async move {
+        let is_nvml = drm_card.driver().await.ok().map(|v| v == "nvidia").unwrap_or(false);
+        if is_nvml {
+            let id = drm_card.id();
+            Some((drm_card, syx::nvml::Values::new(id)))
+        } else {
+            None
+        }
     }))
     .await
     .into_iter()
@@ -28,10 +33,10 @@ async fn table() -> Option<String> {
         log::trace!("nvml format table none");
         None
     } else {
-        let rows = join_all(cards.into_iter().map(|card| async move {
+        let rows = join_all(cards.into_iter().map(|(drm_card, card)| async move {
             [
-                card.id().to_string(),
-                "nvidia".to_string(),
+                drm_card.id().to_string(),
+                drm_card.bus_id().await.ok().map(|v| v.id).unwrap_or_else(dot),
                 card.gfx_freq().await.ok().map(mhz).unwrap_or_else(dot),
                 card.gfx_max_freq().await.ok().map(mhz).unwrap_or_else(dot),
                 card.power().await.ok().map(mw).unwrap_or_else(dot),
@@ -42,10 +47,10 @@ async fn table() -> Option<String> {
         }))
         .await;
         let mut tab = Table::new(&[
-            "DRM",
-            "Driver",
-            "GPU cur",
-            "GPU lim",
+            "Nvml",
+            "Bus id",
+            "Gpu cur",
+            "Gpu lim",
             "Power cur",
             "Power lim",
             "Min lim",

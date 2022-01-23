@@ -17,10 +17,6 @@ pub(crate) use crate::applet::nvml::Nvml;
 pub(crate) use crate::applet::rapl::{ConstraintIds as RaplConstraintIds, Rapl};
 use crate::Result;
 
-pub(crate) type Runner = Pin<Box<dyn Future<Output = Result<()>> + Send>>;
-
-pub(crate) type Formatter = Pin<Box<dyn Future<Output = Option<String>> + Send>>;
-
 pub(crate) fn all() -> Vec<Box<dyn Applet>> {
     vec![
         Box::new(Cpu::default()),
@@ -30,6 +26,10 @@ pub(crate) fn all() -> Vec<Box<dyn Applet>> {
         Box::new(Install::default()),
     ]
 }
+
+pub(crate) type Runner = Pin<Box<dyn Future<Output = Result<()>> + Send>>;
+
+pub(crate) type Formatter = Pin<Box<dyn Future<Output = Option<String>> + Send>>;
 
 #[async_trait]
 pub(crate) trait Applet {

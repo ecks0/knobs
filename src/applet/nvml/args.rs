@@ -15,17 +15,15 @@ const GPU_RESET_SHORT: char = 'r';
 const POWER_SHORT: char = 'P';
 const POWER_RESET_SHORT: char = 'R';
 
-const CARD_HELP: &str = "Target nvml drm card indexes or bus ids";
+const CARD_HELP: &str = "Target nvml bus or card ids";
 const GPU_MIN_HELP: &str = "Set nvml min gpu freq in megahertz";
 const GPU_MAX_HELP: &str = "Set nvml max gpu freq in megahertz";
 const GPU_RESET_HELP: &str = "Reset nvml gpu freq to default";
 const POWER_HELP: &str = "Set nvml device power limit in watts";
 const POWER_RESET_HELP: &str = "Reset nvml power limit to default";
 
-#[rustfmt::skip]
 fn card_help_long() -> String {
-"Target nvml drm card indexes or bus ids, comma-delimited
-Bus id syntax: BUS:ID e.g. pci:0000:00:02.0".to_string()
+    "Target nvml drm or card ids, comma-delimited".to_string()
 }
 
 fn gpu_min_help_long() -> String {

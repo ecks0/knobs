@@ -11,15 +11,13 @@ const MIN_SHORT: char = 'n';
 const MAX_SHORT: char = 'x';
 const BOOST_SHORT: char = 'b';
 
-const CARD_HELP: &str = "Target i915 drm card indexes or bus ids";
+const CARD_HELP: &str = "Target i915 bus or card ids";
 const MIN_HELP: &str = "Set i915 min freq in megahertz";
 const MAX_HELP: &str = "Set i915 max freq in megahertz";
 const BOOST_HELP: &str = "Set i915 boost freq in megahertz";
 
-#[rustfmt::skip]
 fn card_help_long() -> String {
-"Target i915 drm card indexes or bus ids, comma-delimited
-Bus id syntax: BUS:ID e.g. pci:0000:00:02.0".to_string()
+    "Target i915 bus or card ids, comma-delimited".to_string()
 }
 
 fn min_help_long() -> String {

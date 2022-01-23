@@ -19,17 +19,9 @@ impl FromStr for BusId {
     type Err = Error;
 
     fn from_str(v: &str) -> Result<Self> {
-        match v.split_once(':') {
-            Some((bus, id)) => {
-                let (bus, id) = (bus.into(), id.into());
-                let r = Self { bus, id };
-                Ok(r)
-            },
-            None => Err(Error::parse_value(format!(
-                "expected bus id syntax {:?}, got {:?}",
-                "BUS:ID", v
-            ))),
-        }
+        let (bus, id) = ("pci".into(), v.into());
+        let r = Self { bus, id };
+        Ok(r)
     }
 }
 
