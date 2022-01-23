@@ -43,5 +43,5 @@ pub(crate) trait Applet {
 
     async fn run(&self, parser: Parser<'_>) -> Result<Runner>;
 
-    async fn format(&self) -> Vec<Formatter>;
+    async fn format(&self) -> Option<Vec<Formatter>>;
 }

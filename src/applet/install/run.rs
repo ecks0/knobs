@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 
-use tokio::fs::symlink;
+use tokio::fs::{remove_file, symlink};
 use tokio::io::{stderr, stdout, AsyncWriteExt as _};
 
 use crate::{applet, Error, Result};
 
-pub(super) async fn run(dir: Option<String>) -> Result<()> {
+pub(super) async fn run(values: super::Values) -> Result<()> {
     log::trace!("install run start");
     let argv0 = std::env::current_exe().expect("argv[0] absolute path");
-    let dir: PathBuf = if let Some(dir) = dir {
+    let dir: PathBuf = if let Some(dir) = values.dir {
         dir.into()
     } else {
         argv0.parent().expect("parent directory of argv[0]").into()
@@ -20,14 +20,27 @@ pub(super) async fn run(dir: Option<String>) -> Result<()> {
         .into_iter()
         .filter_map(|a| a.binary().map(|v| dir.join(v)))
         .collect();
-    for bin in bins {
-        if let Err(e) = symlink(&argv0, &bin).await {
-            ok = false;
-            let msg = format!("{}: {}\n", bin.display(), e);
-            stderr.write_all(msg.as_bytes()).await.unwrap();
-        } else {
-            let msg = format!("{}\n", bin.display());
-            stdout.write_all(msg.as_bytes()).await.unwrap();
+    if values.uninstall.is_none() {
+        for bin in bins {
+            if let Err(e) = symlink(&argv0, &bin).await {
+                ok = false;
+                let msg = format!("{}: {}\n", bin.display(), e);
+                stderr.write_all(msg.as_bytes()).await.unwrap();
+            } else {
+                let msg = format!("{}\n", bin.display());
+                stdout.write_all(msg.as_bytes()).await.unwrap();
+            };
+        }
+    } else {
+        for bin in bins {
+            if let Err(e) = remove_file(&bin).await {
+                ok = false;
+                let msg = format!("{}: {}\n", bin.display(), e);
+                stderr.write_all(msg.as_bytes()).await.unwrap();
+            } else {
+                let msg = format!("{}\n", bin.display());
+                stdout.write_all(msg.as_bytes()).await.unwrap();
+            };
         }
     }
     stdout.flush().await.unwrap();

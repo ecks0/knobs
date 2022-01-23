@@ -6,12 +6,14 @@ Knobs provides several utilities in one binary, in the manner of busybox.
 Utilities may be run via symlinks to the `knobs` binary, or as subcommands
 to the `knobs` binary.
 
-| Subcommand | Utility | Function                |
-| ---------- | ------- | ----------------------- |
-| cpu        | kcpu    | View or set cpu values  |
-| rapl       | krapl   | View or set rapl values |
-| i915       | ki915   | View or set i915 values |
-| nvml       | knvml   | View or set nvml values |
+| Utility  | Subcommand | Function                                     |
+| -------- | ---------- | -------------------------------------------- |
+| kcpu     | cpu        | View or set cpu/cpufreq/intel_pstate values  |
+| krapl    | rapl       | View or set intel_rapl values                |
+| ki915    | i915       | View or set i915 values                      |
+| knvml    | nvml       | View or set nvidia management library values |
+
+## Utility symlinks
 
 To install symlinks for utilities alongside the `knobs` binary,
 run:
@@ -33,7 +35,7 @@ groups have three useful properties:
 - Any error will abort the entire invocation.
 - Tables are printed once after all device values are written.
 
-### Subcommand argument group example
+_Subcommand argument group example_
 
 ```bash
 knobs \
@@ -42,15 +44,7 @@ knobs \
     rapl -p 0 -c 0 -l 7 -- \
     rapl -p 0 -c 1 -l 15
 ```
-- `cpu`
-    - for all cpu ids, set governor to `schedutil` and max freq to 2000 mhz
-    - for cpu ids 4 and up, set offline
-- `rapl`
-    - for package 0, constraint 0, set power limit to 7 watts
-    - for package 0, constraint 1, set power limit to 15 watts
-
-### Utility argument group example
-
+_Utility argument group example_
 ```
 kcpu \
   -c .. -g schedutil -x 2000 -- \
@@ -60,14 +54,15 @@ krapl \
   -p 0 -c 0 -l 7 -- \
   -p 0 -c 1 -l 15
 ```
-- `kcpu`
+
+- `knobs cpu` / `kcpu`
     - for all cpu ids, set governor to `schedutil` and max freq to 2000 mhz
     - for cpu ids 4 and up, set offline
-- `krapl`
+- `knobs rapl` / `krapl`
     - for package 0, constraint 0, set power limit to 7 watts
     - for package 0, constraint 1, set power limit to 15 watts
 
-## Utilities
+## Utility reference
 
 ### kcpu
 

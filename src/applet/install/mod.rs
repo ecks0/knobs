@@ -1,3 +1,4 @@
+mod args;
 mod run;
 
 use async_trait::async_trait;
@@ -7,7 +8,11 @@ use crate::applet::{Applet, Formatter, Runner};
 use crate::cli::{Arg, Parser};
 use crate::Result;
 
-const DIR: &str = "dir";
+#[derive(Debug)]
+struct Values {
+    uninstall: Option<()>,
+    dir: Option<String>,
+}
 
 #[derive(Debug, Default)]
 pub(crate) struct Install;
@@ -27,20 +32,16 @@ impl Applet for Install {
     }
 
     fn args(&self) -> Vec<Arg> {
-        vec![Arg {
-            name: DIR.into(),
-            help: "Specify symlink installation directory".into(),
-            ..Default::default()
-        }]
+        args::args()
     }
 
     async fn run(&self, p: Parser<'_>) -> Result<Runner> {
-        let dir = p.string(DIR);
-        let r = run::run(dir).boxed();
+        let values = Values::from_parser(p);
+        let r = run::run(values).boxed();
         Ok(r)
     }
 
-    async fn format(&self) -> Vec<Formatter> {
-        vec![]
+    async fn format(&self) -> Option<Vec<Formatter>> {
+        None
     }
 }
