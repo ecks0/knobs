@@ -7,7 +7,6 @@ const GPU_MAX: &str = "gpu-max";
 const GPU_RESET: &str = "gpu-reset";
 const POWER: &str = "power";
 const POWER_RESET: &str = "power-reset";
-const QUIET: &str = "quiet";
 
 const CARD_SHORT: char = 'c';
 const GPU_MIN_SHORT: char = 'n';
@@ -15,7 +14,6 @@ const GPU_MAX_SHORT: char = 'x';
 const GPU_RESET_SHORT: char = 'r';
 const POWER_SHORT: char = 'P';
 const POWER_RESET_SHORT: char = 'R';
-const QUIET_SHORT: char = 'q';
 
 const CARD_HELP: &str = "Target nvml drm card indexes or bus ids";
 const GPU_MIN_HELP: &str = "Set nvml min gpu freq in megahertz";
@@ -23,14 +21,11 @@ const GPU_MAX_HELP: &str = "Set nvml max gpu freq in megahertz";
 const GPU_RESET_HELP: &str = "Reset nvml gpu freq to default";
 const POWER_HELP: &str = "Set nvml device power limit in watts";
 const POWER_RESET_HELP: &str = "Reset nvml power limit to default";
-const QUIET_HELP: &str = "Do not print table";
 
 #[rustfmt::skip]
 fn card_help_long() -> String {
 "Target nvml drm card indexes or bus ids, comma-delimited
-Bus id syntax: BUS:ID e.g. pci:0000:00:02.0
-
-".to_string()
+Bus id syntax: BUS:ID e.g. pci:0000:00:02.0".to_string()
 }
 
 fn gpu_min_help_long() -> String {
@@ -114,13 +109,6 @@ pub(super) fn args() -> Vec<Arg> {
             conflicts: vec![POWER].into(),
             ..Default::default()
         },
-        Arg {
-            name: QUIET.into(),
-            long: QUIET.into(),
-            short: QUIET_SHORT.into(),
-            help: QUIET_HELP.into(),
-            ..Default::default()
-        },
     ]
 }
 
@@ -134,7 +122,6 @@ impl super::Values {
             gpu_reset: p.flag(GPU_RESET),
             power: p.watts(POWER)?,
             power_reset: p.flag(POWER_RESET),
-            quiet: p.flag(QUIET),
         };
         log::trace!("nvml parse done");
         Ok(r)

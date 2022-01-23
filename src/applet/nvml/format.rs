@@ -18,7 +18,7 @@ async fn not_found() -> Option<String> {
 }
 
 async fn table() -> Option<String> {
-    log::trace!("nvml summary table start");
+    log::trace!("nvml format table start");
     let cards = once::drm_cards().await;
     let cards: Vec<_> = join_all(cards.into_iter().map(|card| async move {
         let is_nvml = card.driver().await.ok().map(|v| v == "nvidia").unwrap_or(false);
@@ -29,7 +29,7 @@ async fn table() -> Option<String> {
     .flatten()
     .collect();
     if cards.is_empty() {
-        log::trace!("nvml summary table none");
+        log::trace!("nvml format table none");
         not_found().await
     } else {
         let rows = join_all(cards.into_iter().map(|card| async move {
@@ -57,14 +57,14 @@ async fn table() -> Option<String> {
         ]);
         tab.rows(rows);
         let r = Some(tab.into());
-        log::trace!("nvml summary table done");
+        log::trace!("nvml format table done");
         r
     }
 }
 
-pub(super) async fn summary() -> Vec<Formatter> {
-    log::trace!("nvml summary start");
+pub(super) async fn format() -> Vec<Formatter> {
+    log::trace!("nvml format start");
     let formatters = vec![table().boxed()];
-    log::trace!("nvml summary done");
+    log::trace!("nvml format done");
     formatters
 }

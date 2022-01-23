@@ -14,7 +14,7 @@ async fn not_found() -> Option<String> {
 }
 
 async fn table() -> Option<String> {
-    log::trace!("i915 summary table start");
+    log::trace!("i915 format table start");
     let cards = once::drm_cards().await;
     let cards: Vec<_> = join_all(cards.into_iter().map(|card| async move {
         let is_i915 = card.driver().await.ok().map(|v| v == "i915").unwrap_or(false);
@@ -25,7 +25,7 @@ async fn table() -> Option<String> {
     .flatten()
     .collect();
     if cards.is_empty() {
-        log::trace!("i915 summary table none");
+        log::trace!("i915 format table none");
         not_found().await
     } else {
         let rows = join_all(cards.into_iter().map(|card| async move {
@@ -47,14 +47,14 @@ async fn table() -> Option<String> {
         ]);
         tab.rows(rows);
         let r = Some(tab.into());
-        log::trace!("i915 summary table done");
+        log::trace!("i915 format table done");
         r
     }
 }
 
-pub(super) async fn summary() -> Vec<Formatter> {
-    log::trace!("i915 summary start");
+pub(super) async fn format() -> Vec<Formatter> {
+    log::trace!("i915 format start");
     let formatters = vec![table().boxed()];
-    log::trace!("i915 summary done");
+    log::trace!("i915 format done");
     formatters
 }

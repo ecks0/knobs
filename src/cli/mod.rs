@@ -1,5 +1,8 @@
 mod parser;
 
+use std::collections::HashSet;
+use std::iter;
+
 use clap::ErrorKind as ClapErrorKind;
 use futures::future::join_all;
 use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
@@ -10,6 +13,10 @@ use crate::util::env::var_name;
 use crate::{Error, Result};
 
 pub(crate) const NAME: &str = "knobs";
+
+const QUIET: &str = "quiet";
+const QUIET_SHORT: char = 'q';
+const QUIET_HELP: &str = "Do not print tables";
 
 fn config_logging() {
     use std::io::Write as _;
@@ -46,7 +53,7 @@ pub(crate) struct Arg {
 
 impl<'a> From<&'a Arg> for clap::Arg<'a> {
     fn from(v: &'a Arg) -> Self {
-        let name = v.name.expect("Cli argument name is missing");
+        let name = v.name.expect("cli argument name");
         let mut a = clap::Arg::new(name);
         if let Some(long) = v.long {
             a = a.long(long);
@@ -83,6 +90,16 @@ impl<'a> From<&'a Arg> for clap::Arg<'a> {
     }
 }
 
+fn app_args() -> Vec<Arg> {
+    vec![Arg {
+        name: QUIET.into(),
+        long: QUIET.into(),
+        short: QUIET_SHORT.into(),
+        help: QUIET_HELP.into(),
+        ..Default::default()
+    }]
+}
+
 async fn format(formatters: Vec<Formatter>) {
     let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
     let mut ok = false;
@@ -110,56 +127,132 @@ where
         .version(clap::crate_version!())
 }
 
-async fn run_subcommand(argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Result<()> {
-    let applet_args: Vec<_> = applets.iter().map(|a| (a, a.args())).collect();
-    let matches = applet_args
-        .iter()
-        .fold(make_clap_app(NAME), |clap_app, (applet, args)| {
-            let subcmd_args = args.iter().map(clap::Arg::from);
-            let subcmd = make_clap_app(applet.name()).args(subcmd_args).about(applet.about());
-            clap_app.subcommand(subcmd)
-        })
-        .try_get_matches_from(argv)?;
-    drop(applet_args);
-    let formatters = match matches.subcommand() {
-        Some((subcmd, subcmd_matches)) => {
-            let mut applet = applets.into_iter().find(|a| a.name() == subcmd).unwrap();
-            let parser = Parser::from(subcmd_matches);
-            applet.run(parser).await?;
-            drop(matches);
-            applet.summary().await
-        },
-        None => {
-            drop(matches);
-            let default_summaries = applets.into_iter().map(|applet| async move {
-                if applet.default_summary() { Some(applet.summary().await) } else { None }
-            });
-            join_all(default_summaries).await.into_iter().flatten().flatten().collect()
-        },
-    };
+async fn run_subcommands<'a>(
+    argv0: &'a str,
+    argv: &'a [String],
+    applets: Vec<Box<dyn Applet>>,
+) -> Result<()> {
+    let (quiet, subcmds, runners) = async {
+        let app_args_data = app_args();
+        let applet_args_data: Vec<_> =
+            applets.iter().map(|a| (a.subcommand(), a.about(), a.args())).collect();
+        let app_args = app_args_data.iter().map(clap::Arg::from);
+        let applet_args = applet_args_data
+            .iter()
+            .map(|(n, a, args)| (*n, *a, args.iter().map(clap::Arg::from).collect::<Vec<_>>()));
+        let mut quiet = false;
+        let mut subcmds = HashSet::new();
+        let mut runners = vec![];
+        let argvs = argv.split(|v| "--" == v).map(|argv| {
+            let argv = argv.iter().map(|v| v.as_str());
+            iter::once(argv0).chain(argv)
+        });
+        for (i, argv) in argvs.enumerate() {
+            async {
+                let matches = applet_args
+                    .clone()
+                    .fold(
+                        make_clap_app(argv0).args(app_args.clone()),
+                        |clap_app, (name, about, args)| {
+                            let subcmd = make_clap_app(name).about(about).args(args);
+                            clap_app.subcommand(subcmd)
+                        },
+                    )
+                    .try_get_matches_from(argv)?;
+                if Parser::from(&matches).flag(QUIET).is_some() {
+                    quiet = true;
+                }
+                if let Some((subcmd, subcmd_matches)) = matches.subcommand() {
+                    let applet = applets
+                        .iter()
+                        .find(|a| subcmd == a.subcommand())
+                        .expect("applet for subcommand");
+                    let parser = Parser::from(subcmd_matches);
+                    let runner = applet.run(parser).await?;
+                    runners.push((i, runner));
+                    subcmds.insert(applet.subcommand());
+                }
+                Ok(())
+            }
+            .await
+            .map_err(|e| Error::group(e, i))?;
+        }
+        Result::Ok((quiet, subcmds, runners))
+    }
+    .await?;
+    let formatters = async move {
+        let mut formatters = vec![];
+        if !quiet {
+            for applet in applets {
+                if subcmds.is_empty() || subcmds.contains(applet.subcommand()) {
+                    formatters.extend(applet.format().await);
+                }
+            }
+        }
+        formatters
+    }
+    .await;
+    for (i, runner) in runners {
+        runner.await.map_err(|e| Error::group(e, i))?;
+    }
     format(formatters).await;
     Ok(())
 }
 
-async fn run_binary(bin: &str, argv: Vec<String>, applets: Vec<Box<dyn Applet>>) -> Result<()> {
-    let mut applet =
-        applets.into_iter().find(|a| a.bin().map(|v| bin == v).unwrap_or(false)).unwrap();
-    let applet_args = applet.args();
-    let clap_args: Vec<_> = applet_args.iter().map(clap::Arg::from).collect();
-    let matches =
-        make_clap_app(bin).args(clap_args).about(applet.about()).try_get_matches_from(argv)?;
-    drop(applet_args);
-    let parser = Parser::from(&matches);
-    applet.run(parser).await?;
-    drop(matches);
-    let formatters = applet.summary().await;
-    drop(applet);
+async fn run_binary<'a>(
+    argv0: &'a str,
+    argv: &'a [String],
+    applets: Vec<Box<dyn Applet>>,
+) -> Result<()> {
+    let applet = applets
+        .into_iter()
+        .find(|a| Some(argv0) == a.binary())
+        .expect("applet for binary");
+    let (quiet, runners) = async {
+        let app_args_data = app_args();
+        let applet_args_data = applet.args();
+        let app_args = app_args_data.iter().map(clap::Arg::from);
+        let applet_args = applet_args_data.iter().map(clap::Arg::from).chain(app_args);
+        let mut quiet = false;
+        let mut runners = vec![];
+        let argvs = argv.split(|v| "--" == v).map(|argv| {
+            let argv = argv.iter().map(|v| v.as_str());
+            iter::once(argv0).chain(argv)
+        });
+        for (i, argv) in argvs.enumerate() {
+            async {
+                let app = make_clap_app(argv0).about(applet.about()).args(applet_args.clone());
+                let matches = app.try_get_matches_from(argv)?;
+                let parser = Parser::from(&matches);
+                if parser.flag(QUIET).is_some() {
+                    quiet = true;
+                }
+                let runner = applet.run(parser).await?;
+                runners.push((i, runner));
+                Ok(())
+            }
+            .await
+            .map_err(|e| Error::group(e, i))?;
+        }
+        Result::Ok((quiet, runners))
+    }
+    .await?;
+    let formatters = async move {
+        if quiet { vec![] } else { applet.format().await }
+    }
+    .await;
+    for (i, runner) in runners {
+        runner.await.map_err(|e| Error::group(e, i))?;
+    }
     format(formatters).await;
     Ok(())
 }
 
-fn argv0(argv: &[String]) -> String {
-    argv.iter().next().and_then(|s| s.as_str().split('/').last()).unwrap_or(NAME).to_string()
+fn argv0(argv: &[String]) -> &str {
+    argv.iter()
+        .next()
+        .and_then(|s| s.as_str().split('/').last())
+        .expect("basename of argv[0]")
 }
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
@@ -167,10 +260,10 @@ pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result
     let argv: Vec<_> = argv.into_iter().collect();
     let argv0 = argv0(&argv);
     let applets = applet::all();
-    if applets.iter().any(|a| a.bin().map(|v| argv0 == v).unwrap_or(false)) {
-        run_binary(&argv0, argv, applets).await
+    if applets.iter().any(|a| Some(argv0) == a.binary()) {
+        run_binary(argv0, &argv[1..], applets).await
     } else {
-        run_subcommand(argv, applets).await
+        run_subcommands(argv0, &argv[1..], applets).await
     }
 }
 

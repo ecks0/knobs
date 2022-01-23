@@ -6,36 +6,33 @@ const SUBZONE: &str = "subzone";
 const CONSTRAINT: &str = "constraint";
 const LIMIT: &str = "limit";
 const WINDOW: &str = "window";
-pub(super) const QUIET: &str = "quiet";
 
 const PACKAGE_SHORT: char = 'p';
 const SUBZONE_SHORT: char = 's';
 const CONSTRAINT_SHORT: char = 'c';
 const LIMIT_SHORT: char = 'l';
 const WINDOW_SHORT: char = 'w';
-const QUIET_SHORT: char = 'q';
 
 const PACKAGE_HELP: &str = "Target rapl package";
 const SUBZONE_HELP: &str = "Target rapl subzone";
 const CONSTRAINT_HELP: &str = "Target rapl constraint";
 const LIMIT_HELP: &str = "Set rapl power limit in watts";
 const WINDOW_HELP: &str = "Set rapl power window in microseconds";
-const QUIET_HELP: &str = "Do not print table";
 
 #[rustfmt::skip]
 fn limit_help_long() -> String {
     format!(
 "Set rapl power limit in watts per
---{}/{}/{}
-", PACKAGE, SUBZONE, CONSTRAINT)
+--{}/{}/{}",
+    PACKAGE, SUBZONE, CONSTRAINT)
 }
 
 #[rustfmt::skip]
 fn window_help_long() -> String {
     format!(
 "Set rapl power window in microseconds per
---{}/{}/{}
-", PACKAGE, SUBZONE, CONSTRAINT)
+--{}/{}/{}",
+    PACKAGE, SUBZONE, CONSTRAINT)
 }
 
 pub(super) fn args() -> Vec<Arg> {
@@ -84,13 +81,6 @@ pub(super) fn args() -> Vec<Arg> {
             requires: vec![PACKAGE, CONSTRAINT].into(),
             ..Default::default()
         },
-        Arg {
-            name: QUIET.into(),
-            long: QUIET.into(),
-            short: QUIET_SHORT.into(),
-            help: QUIET_HELP.into(),
-            ..Default::default()
-        },
     ]
 }
 
@@ -101,7 +91,6 @@ impl super::Values {
             constraint_ids: p.rapl_constraint_ids(PACKAGE, SUBZONE, CONSTRAINT).await?,
             limit: p.watts(LIMIT)?,
             window: p.microseconds(WINDOW)?,
-            quiet: p.flag(QUIET),
         };
         log::trace!("rapl parse done");
         Ok(r)

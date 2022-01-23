@@ -1,12 +1,14 @@
 mod args;
-mod summary;
+mod format;
+mod run;
 
 use std::time::Duration;
 
 use async_trait::async_trait;
+use futures::future::FutureExt as _;
 use measurements::Power;
 
-use crate::applet::{Applet, Formatter};
+use crate::applet::{Applet, Formatter, Runner};
 use crate::cli::{Arg, Parser};
 use crate::Result;
 
@@ -22,22 +24,19 @@ struct Values {
     constraint_ids: Option<ConstraintIds>,
     limit: Option<Power>,
     window: Option<Duration>,
-    quiet: Option<()>,
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct Rapl {
-    quiet: Option<()>,
-}
+pub(crate) struct Rapl;
 
 #[async_trait]
 impl Applet for Rapl {
-    fn name(&self) -> &'static str {
-        "rapl"
+    fn binary(&self) -> Option<&'static str> {
+        Some("krapl")
     }
 
-    fn bin(&self) -> Option<&'static str> {
-        Some("krapl")
+    fn subcommand(&self) -> &'static str {
+        "rapl"
     }
 
     fn about(&self) -> &'static str {
@@ -48,32 +47,13 @@ impl Applet for Rapl {
         args::args()
     }
 
-    async fn run(&mut self, p: Parser<'_>) -> Result<()> {
-        log::trace!("rapl run start");
+    async fn run(&self, p: Parser<'_>) -> Result<Runner> {
         let values = Values::from_parser(p).await?;
-        self.quiet = values.quiet;
-        if let Some(constraint_ids) = values.constraint_ids {
-            let limit = values.limit.map(|v| v.as_microwatts().trunc() as u64);
-            let window = values.window.map(|v| v.as_micros().try_into().unwrap());
-            for constraint in constraint_ids.constraints {
-                let id = (constraint_ids.package, constraint_ids.subzone, constraint);
-                if let Some(v) = limit {
-                    syx::intel_rapl::constraint::set_power_limit_uw(id, v).await?;
-                }
-                if let Some(v) = window {
-                    syx::intel_rapl::constraint::set_time_window_us(id, v).await?;
-                }
-            }
-        }
-        log::trace!("rapl run done");
-        Ok(())
+        let r = run::run(values).boxed();
+        Ok(r)
     }
 
-    async fn summary(&self) -> Vec<Formatter> {
-        if self.quiet.is_none() { summary::summary().await } else { vec![] }
-    }
-
-    fn default_summary(&self) -> bool {
-        true
+    async fn format(&self) -> Vec<Formatter> {
+        format::format().await
     }
 }

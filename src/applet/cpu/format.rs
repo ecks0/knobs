@@ -18,9 +18,9 @@ async fn not_found() -> Option<String> {
 }
 
 async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<String> {
-    log::trace!("cpu summary cpu_cpufreq start");
+    log::trace!("cpu format cpu_cpufreq start");
     if cpus.is_empty() {
-        log::trace!("cpu summary cpu_cpufreq none");
+        log::trace!("cpu format cpu_cpufreq none");
         None
     } else {
         let rows = join_all(cpus.into_iter().map(|cpu| {
@@ -55,21 +55,25 @@ async fn cpu_cpufreq(cpus: Vec<Cpu>, mut cpufreqs: Vec<Cpufreq>) -> Option<Strin
         ]);
         tab.rows(rows);
         let r = Some(tab.into());
-        log::trace!("cpu summary cpu_cpufreq done");
+        log::trace!("cpu format cpu_cpufreq done");
         r
     }
 }
 
 async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
-    log::trace!("cpu summary governors start");
+    log::trace!("cpu format governors start");
     if cpufreqs.is_empty() {
-        log::trace!("cpu summary governors none");
+        log::trace!("cpu format governors none");
         None
     } else {
         let values = join_all(cpufreqs.into_iter().map(|v| async move {
             let id = v.id().to_string();
-            let govs =
-                v.scaling_available_governors().await.ok().map(|g| g.join(" ")).unwrap_or_else(dot);
+            let govs = v
+                .scaling_available_governors()
+                .await
+                .ok()
+                .map(|g| g.join(" "))
+                .unwrap_or_else(dot);
             [id, govs]
         }))
         .await;
@@ -87,30 +91,30 @@ async fn governors(cpufreqs: Vec<Cpufreq>) -> Option<String> {
                 tab.rows(values);
             }
             let r = Some(tab.into());
-            log::trace!("cpu summary governors done");
+            log::trace!("cpu format governors done");
             r
         }
     }
 }
 
 async fn pstate_status(system: PstateSystem) -> Option<String> {
-    log::trace!("cpu summary pstate_status start");
+    log::trace!("cpu format pstate_status start");
     if system.is_active().await.unwrap_or(false) {
-        log::trace!("cpu summary pstate_status none");
+        log::trace!("cpu format pstate_status none");
         None
     } else {
         // Print the status when not active so that the user
         // knows why they're not seeing the epb/epp tables.
         let r = system.status().await.ok().map(|v| format!(" intel_pstate: {}\n", v));
-        log::trace!("cpu summary pstate_status done");
+        log::trace!("cpu format pstate_status done");
         r
     }
 }
 
 async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String> {
-    log::trace!("cpu summary epb_epp start");
+    log::trace!("cpu format epb_epp start");
     if pstates.is_empty() || !system.is_active().await.ok().unwrap_or(false) {
-        log::trace!("cpu summary epb_epp none");
+        log::trace!("cpu format epb_epp none");
         None
     } else {
         let values = join_all(pstates.into_iter().map(|v| async move {
@@ -131,7 +135,7 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
         epb_epp.sort_unstable();
         epb_epp.dedup();
         if epb_epp.is_empty() || (epb_epp.len() == 1 && epb_epp[0] == (DOT, DOT)) {
-            log::trace!("cpu summary epb_epp none 2");
+            log::trace!("cpu format epb_epp none 2");
             None
         } else {
             let mut tab = Table::new(&["CPU", "EP bias", "EP preference"]);
@@ -142,16 +146,16 @@ async fn epb_epp(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<Str
                 tab.rows(values);
             }
             let r = Some(tab.into());
-            log::trace!("cpu summary epb_epp done");
+            log::trace!("cpu format epb_epp done");
             r
         }
     }
 }
 
 async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String> {
-    log::trace!("cpu summary epps start");
+    log::trace!("cpu format epps start");
     if pstates.is_empty() || !system.is_active().await.ok().unwrap_or(false) {
-        log::trace!("cpu summary epps none");
+        log::trace!("cpu format epps none");
         None
     } else {
         let values = join_all(pstates.into_iter().map(|v| async move {
@@ -169,7 +173,7 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
         epps.sort_unstable();
         epps.dedup();
         if epps.is_empty() || (epps.len() == 1 && epps[0] == DOT) {
-            log::trace!("cpu summary epps none 2");
+            log::trace!("cpu format epps none 2");
             None
         } else {
             let mut tab = Table::new(&["CPU", "Available EP preferences"]);
@@ -179,14 +183,14 @@ async fn epps(system: PstateSystem, pstates: Vec<PstatePolicy>) -> Option<String
                 tab.rows(values);
             }
             let r = Some(tab.into());
-            log::trace!("cpu summary epps done");
+            log::trace!("cpu format epps done");
             r
         }
     }
 }
 
-pub(super) async fn summary() -> Vec<Formatter> {
-    log::trace!("cpu summary start");
+pub(super) async fn format() -> Vec<Formatter> {
+    log::trace!("cpu format start");
     let mut formatters = vec![];
     let ids: Vec<_> = once::cpu_ids().await;
     if ids.is_empty() {
@@ -196,7 +200,7 @@ pub(super) async fn summary() -> Vec<Formatter> {
         let cpufreqs: Vec<_> = ids.clone().into_iter().map(Cpufreq::new).collect();
         let pstates: Vec<_> = ids.into_iter().map(PstatePolicy::new).collect();
         let system = PstateSystem::default();
-        log::trace!("cpu summary formatters");
+        log::trace!("cpu format formatters");
         formatters.extend([
             cpu_cpufreq(cpus, cpufreqs.clone()).boxed(),
             governors(cpufreqs).boxed(),
@@ -204,7 +208,7 @@ pub(super) async fn summary() -> Vec<Formatter> {
             epb_epp(system.clone(), pstates.clone()).boxed(),
             epps(system, pstates).boxed(),
         ]);
-        log::trace!("cpu summary done");
+        log::trace!("cpu format done");
     }
     formatters
 }

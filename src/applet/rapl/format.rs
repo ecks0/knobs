@@ -107,7 +107,7 @@ async fn table() -> Option<String> {
     }
 }
 
-pub(super) async fn summary() -> Vec<Formatter> {
+pub(super) async fn format() -> Vec<Formatter> {
     log::trace!("rapl summary start");
     let formatters = vec![table().boxed()];
     log::trace!("rapl summary done");

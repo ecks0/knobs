@@ -26,6 +26,9 @@ pub enum Error {
 
     #[error("error: {0}")]
     ParseValue(String),
+
+    #[error("argument group {1}: {0}")]
+    Group(String, usize),
 }
 
 impl Error {
@@ -38,6 +41,20 @@ impl Error {
     fn parse_value(message: impl Display) -> Self {
         let message = message.to_string();
         Self::ParseValue(message)
+    }
+
+    fn group(error: Self, group: usize) -> Self {
+        if let Error::Clap(err) = &error {
+            if matches!(
+                err.kind,
+                clap::ErrorKind::DisplayHelp
+                    | clap::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand
+            ) {
+                return error;
+            }
+        }
+        let error = error.to_string();
+        Self::Group(error, group)
     }
 }
 

@@ -8,7 +8,6 @@ const MIN: &str = "min";
 const MAX: &str = "max";
 const EPB: &str = "epb";
 const EPP: &str = "epp";
-const QUIET: &str = "quiet";
 
 const CPU_SHORT: char = 'c';
 const ON_SHORT: char = 'o';
@@ -17,7 +16,6 @@ const MIN_SHORT: char = 'n';
 const MAX_SHORT: char = 'x';
 const EPB_SHORT: char = 'b';
 const EPP_SHORT: char = 'p';
-const QUIET_SHORT: char = 'q';
 
 const CPU_HELP: &str = "Target cpu ids";
 const ON_HELP: &str = "Set cpu online or offline";
@@ -26,15 +24,12 @@ const MIN_HELP: &str = "Set cpu min freq in megahertz";
 const MAX_HELP: &str = "Set cpu max freq in megahertz";
 const EPB_HELP: &str = "Set cpu epb";
 const EPP_HELP: &str = "Set cpu epp";
-const QUIET_HELP: &str = "Do not print tables";
 
 #[rustfmt::skip]
 fn cpu_help_long() -> String {
 "Target cpu ids as comma-delimited list
 of integers and/or inclusive ranges
-Range syntax: X..Y X.. ..Y ..
-
-".to_string()
+Range syntax: X..Y X.. ..Y ..".to_string()
 }
 
 #[rustfmt::skip]
@@ -57,9 +52,11 @@ fn max_help_long() -> String {
     format!("Set cpu max freq in megahertz per -{}/--{}", CPU_SHORT, CPU)
 }
 
-#[rustfmt::skip]
 fn epb_help_long() -> String {
-    format!("Set cpu pstate energy/performance bias per -{}/--{}", CPU_SHORT, CPU)
+    format!(
+        "Set cpu pstate energy/performance bias per -{}/--{}",
+        CPU_SHORT, CPU
+    )
 }
 
 fn epp_help_long() -> String {
@@ -140,13 +137,6 @@ pub(super) fn args() -> Vec<Arg> {
             requires: vec![CPU].into(),
             ..Default::default()
         },
-        Arg {
-            name: QUIET.into(),
-            long: QUIET.into(),
-            short: QUIET_SHORT.into(),
-            help: QUIET_HELP.into(),
-            ..Default::default()
-        },
     ]
 }
 
@@ -161,7 +151,6 @@ impl super::Values {
             max: p.megahertz(MAX)?,
             epb: p.int(EPB)?,
             epp: p.string(EPP),
-            quiet: p.flag(QUIET),
         };
         log::trace!("cpu parse done");
         Ok(r)
