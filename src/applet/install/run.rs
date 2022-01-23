@@ -7,7 +7,7 @@ use crate::{applet, Error, Result};
 
 pub(super) async fn run(values: super::Values) -> Result<()> {
     log::trace!("install run start");
-    let argv0 = std::env::current_exe().expect("argv[0] absolute path");
+    let argv0 = std::env::current_exe().expect("absolute path of argv[0]");
     let dir: PathBuf = if let Some(dir) = values.dir {
         dir.into()
     } else {

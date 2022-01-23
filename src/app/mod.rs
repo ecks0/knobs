@@ -116,8 +116,8 @@ impl App {
             argv: argv.collect(),
             applets: applet::all(),
             quiet: false,
-            runners: Default::default(),
-            format_subcmds: Default::default(),
+            runners: vec![],
+            format_subcmds: HashSet::new(),
         };
         log::trace!("app init done");
         r
@@ -145,10 +145,11 @@ impl App {
 
     async fn make_binary_runners(&mut self) -> Result<()> {
         log::trace!("app make binary runners start");
+        let argv0 = self.argv0.as_str();
         let applet = self
             .applets
             .iter()
-            .find(|a| Some(self.argv0.as_str()) == a.binary())
+            .find(|a| Some(argv0) == a.binary())
             .expect("applet for binary");
         let app_args_data = make_app_args();
         let applet_args_data = applet.args();
@@ -156,12 +157,11 @@ impl App {
         let applet_args = applet_args_data.iter().map(clap::Arg::from).chain(app_args);
         let argvs = self.argv.split(|v| "--" == v).map(|argv| {
             let argv = argv.iter().map(|v| v.as_str());
-            iter::once(self.argv0.as_str()).chain(argv)
+            iter::once(argv0).chain(argv)
         });
         for (i, argv) in argvs.enumerate() {
             async {
-                let app =
-                    make_clap_app(&self.argv0).about(applet.about()).args(applet_args.clone());
+                let app = make_clap_app(argv0).about(applet.about()).args(applet_args.clone());
                 let matches = app.try_get_matches_from(argv)?;
                 let parser = Parser::from(&matches);
                 if parser.flag(QUIET).is_some() {
@@ -183,6 +183,7 @@ impl App {
 
     async fn make_subcommand_runners(&mut self) -> Result<()> {
         log::trace!("app make subcommand runners start");
+        let argv0 = self.argv0.as_str();
         let app_args_data = make_app_args();
         let applet_args_data: Vec<_> =
             self.applets.iter().map(|a| (a.subcommand(), a.about(), a.args())).collect();
@@ -192,14 +193,14 @@ impl App {
             .map(|(n, a, args)| (*n, *a, args.iter().map(clap::Arg::from).collect::<Vec<_>>()));
         let argvs = self.argv.split(|v| "--" == v).map(|argv| {
             let argv = argv.iter().map(|v| v.as_str());
-            iter::once(self.argv0.as_str()).chain(argv)
+            iter::once(argv0).chain(argv)
         });
         for (i, argv) in argvs.enumerate() {
             async {
                 let matches = applet_args
                     .clone()
                     .fold(
-                        make_clap_app(&self.argv0).args(app_args.clone()),
+                        make_clap_app(argv0).args(app_args.clone()),
                         |clap_app, (name, about, args)| {
                             let subcmd = make_clap_app(name).about(about).args(args);
                             clap_app.subcommand(subcmd)
@@ -243,15 +244,33 @@ impl App {
 
     async fn format(&mut self) {
         log::trace!("app format start");
-        let formatters = self.applets.iter().filter_map(|a| {
+        let ctors = self.applets.iter().filter_map(|a| {
             if self.format_subcmds.is_empty() || self.format_subcmds.contains(a.subcommand()) {
                 Some(a.format())
             } else {
                 None
             }
         });
-        let formatters = join_all(formatters).await.into_iter().flatten().flatten();
-        let outputs: Vec<_> = join_all(formatters).await.into_iter().flatten().collect();
+
+        #[rustfmt::skip]
+        // Process all formatters in the current task.
+        // let formatters = join_all(ctors).await.into_iter().flatten().flatten();
+        // let outputs: Vec<_> = join_all(formatters).await.into_iter().flatten().collect();
+
+        // Process each applet's formatters in a separate task. Testing shows that
+        // this can save a few millis when rendering all tables, probably because
+        // the cpu tables are so busy.
+        let formatters = join_all(ctors).await.into_iter().flatten();
+        let tasks = formatters.map(|futs| tokio::spawn(join_all(futs)));
+        let outputs: Vec<_> = join_all(tasks)
+            .await
+            .into_iter()
+            .map(|r| r.expect("formatter task"))
+            .flatten()
+            .flatten()
+            .collect();
+
+        self.format_subcmds.clear();
         if !outputs.is_empty() {
             let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
             let mut ok = false;
@@ -265,7 +284,6 @@ impl App {
             }
             stdout.flush().await.unwrap();
         }
-        self.format_subcmds.clear();
         log::trace!("app format done");
     }
 }
