@@ -15,9 +15,13 @@ const WINDOW_SHORT: char = 'w';
 
 const PACKAGE_HELP: &str = "Target rapl package";
 const SUBZONE_HELP: &str = "Target rapl subzone";
-const CONSTRAINT_HELP: &str = "Target rapl constraint";
+const CONSTRAINT_HELP: &str = "Target rapl constraints";
 const LIMIT_HELP: &str = "Set rapl power limit in watts";
 const WINDOW_HELP: &str = "Set rapl power window in microseconds";
+
+fn constraint_help_long() -> String {
+    "Target rapl constraints, comma-delimited".to_string()
+}
 
 #[rustfmt::skip]
 fn limit_help_long() -> String {
@@ -57,8 +61,9 @@ pub(super) fn args() -> Vec<Arg> {
             name: CONSTRAINT.into(),
             long: CONSTRAINT.into(),
             short: CONSTRAINT_SHORT.into(),
-            value_name: "INT".into(),
+            value_name: "IDS".into(),
             help: CONSTRAINT_HELP.into(),
+            help_long: constraint_help_long().into(),
             ..Default::default()
         },
         Arg {
