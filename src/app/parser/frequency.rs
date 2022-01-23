@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use measurements::Frequency;
 
-use crate::cli::parser::number::Integer as _;
+use crate::app::parser::number::Integer as _;
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]

@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use futures::stream::{self, StreamExt as _, TryStreamExt as _};
 
-use crate::cli::parser::number::Integer;
+use crate::app::parser::number::Integer;
 use crate::util::once;
 use crate::{Error, Result};
 

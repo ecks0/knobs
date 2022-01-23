@@ -1,5 +1,5 @@
+mod app;
 mod applet;
-mod cli;
 mod util;
 
 use std::fmt::Display;
@@ -8,7 +8,7 @@ pub use clap::Error as ClapError;
 pub use syx::Error as SyxError;
 pub use tokio::io::Error as IoError;
 
-pub use crate::cli::{run, run_with_args, try_run_with_args};
+pub use crate::app::run;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

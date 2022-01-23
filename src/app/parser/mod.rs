@@ -12,9 +12,9 @@ use std::time::Duration;
 
 use measurements::{Frequency, Power};
 
+pub(crate) use crate::app::parser::drm::{DrmDriver, I915Driver, NvmlDriver};
+use crate::app::parser::number::Integer;
 use crate::applet::RaplConstraintIds;
-pub(crate) use crate::cli::parser::drm::{DrmDriver, I915Driver, NvmlDriver};
-use crate::cli::parser::number::Integer;
 use crate::{Error, Result};
 
 #[derive(Debug)]

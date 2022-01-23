@@ -1,4 +1,4 @@
-use crate::cli::{Arg, NvmlDriver, Parser};
+use crate::app::{Arg, NvmlDriver, Parser};
 use crate::Result;
 
 const CARD: &str = "card";

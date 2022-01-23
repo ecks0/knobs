@@ -1,4 +1,4 @@
-use crate::cli::{Arg, Parser};
+use crate::app::{Arg, Parser};
 
 const UNINSTALL: &str = "uninstall";
 const DIR: &str = "dir";

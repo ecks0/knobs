@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::cli::parser::number::Integer;
+use crate::app::parser::number::Integer;
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]

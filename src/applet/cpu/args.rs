@@ -1,4 +1,4 @@
-use crate::cli::{Arg, Parser};
+use crate::app::{Arg, Parser};
 use crate::Result;
 
 const CPU: &str = "cpu";

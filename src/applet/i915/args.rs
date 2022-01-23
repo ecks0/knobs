@@ -1,4 +1,4 @@
-use crate::cli::{Arg, I915Driver, Parser};
+use crate::app::{Arg, I915Driver, Parser};
 use crate::Result;
 
 const CARD: &str = "card";

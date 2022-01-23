@@ -4,8 +4,8 @@ mod run;
 use async_trait::async_trait;
 use futures::future::FutureExt as _;
 
+use crate::app::{Arg, Parser};
 use crate::applet::{Applet, Formatter, Runner};
-use crate::cli::{Arg, Parser};
 use crate::Result;
 
 #[derive(Debug)]

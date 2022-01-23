@@ -9,12 +9,12 @@ use std::pin::Pin;
 use async_trait::async_trait;
 use futures::future::Future;
 
+use crate::app::{Arg, Parser};
 pub(crate) use crate::applet::cpu::Cpu;
 pub(crate) use crate::applet::i915::I915;
 pub(crate) use crate::applet::install::Install;
 pub(crate) use crate::applet::nvml::Nvml;
 pub(crate) use crate::applet::rapl::{ConstraintIds as RaplConstraintIds, Rapl};
-use crate::cli::{Arg, Parser};
 use crate::Result;
 
 pub(crate) type Runner = Pin<Box<dyn Future<Output = Result<()>> + Send>>;

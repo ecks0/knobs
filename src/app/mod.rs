@@ -7,8 +7,8 @@ use clap::ErrorKind as ClapErrorKind;
 use futures::future::join_all;
 use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
 
+pub(crate) use crate::app::parser::{I915Driver, NvmlDriver, Parser};
 use crate::applet::{self, Applet, Runner};
-pub(crate) use crate::cli::parser::{I915Driver, NvmlDriver, Parser};
 use crate::util::env::var_name;
 use crate::{Error, Result};
 
@@ -265,6 +265,7 @@ impl App {
             }
             stdout.flush().await.unwrap();
         }
+        self.format_subcmds.clear();
         log::trace!("app format done");
     }
 }
@@ -288,12 +289,12 @@ fn config_logging() {
         .init()
 }
 
-pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
+async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
     config_logging();
     App::new(argv).run().await
 }
 
-pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {
+async fn run_with_args(argv: impl IntoIterator<Item = String>) {
     if let Err(e) = try_run_with_args(argv).await {
         match e {
             Error::Clap(e) => {

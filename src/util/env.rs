@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::cli::NAME;
+use crate::app::NAME;
 
 pub(crate) fn var_name(name: &str) -> String {
     format!("{}_{}", NAME.to_ascii_uppercase(), name)

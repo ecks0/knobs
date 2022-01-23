@@ -8,8 +8,8 @@ use async_trait::async_trait;
 use futures::future::FutureExt as _;
 use measurements::Power;
 
+use crate::app::{Arg, Parser};
 use crate::applet::{Applet, Formatter, Runner};
-use crate::cli::{Arg, Parser};
 use crate::Result;
 
 #[derive(Debug)]

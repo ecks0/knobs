@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use measurements::Power;
 
-use crate::cli::parser::number::Float;
+use crate::app::parser::number::Float;
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]
