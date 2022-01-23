@@ -13,18 +13,30 @@ to the `knobs` binary.
 | ki915    | i915       | View or set i915 values                      |
 | knvml    | nvml       | View or set nvidia management library values |
 
+Utilities and subcommands accept `-h` for short help and `--help` for long help.
+
 ## Utility symlinks
 
-To install symlinks for utilities alongside the `knobs` binary,
-run:
+### Installing
+
+Alongside the `knobs` binary:
 ```
 knobs install
 ```
-To install symlinks to a particular directory, run:
+To a particular directory:
 ```
 knobs install /path/to/directory
 ```
-Run utilities and subcommands with `-h` for short help or `--help` for long help.
+
+### Uninstalling
+Alongside the `knobs` binary:
+```
+knobs install -u
+```
+From a particular directory:
+```
+knobs install -u /path/to/directory
+```
 
 ## Argument groups
 
@@ -65,7 +77,7 @@ krapl \
 ## Environment variables
 
 - `KNOBS_LOG` - Set to `trace` to see what's happening under the hood. Default `error`.
-- `KNOBS_RAPL_INTERVAL_MS` - set to a value between `1` and `1000` to control rapl `energy_uj` sample interval. Default `200`.
+- `KNOBS_RAPL_SAMPLE_MS` - set to a value between `1` and `1000` to control rapl `energy_uj` sample interval. Default `200`.
 
 ## Utility reference
 
@@ -137,7 +149,7 @@ OPTIONS:
 $ krapl
  RAPL  Zone name  Long lim  Short lim  Long win     Short win  Usage
  ----  ---------  --------  ---------  -----------  ---------  ------
- 0     package-0  4 W       15 W       27983872 μs  2440 μs    659 mW
+ 0     package-0  7 W       15 W       27983872 μs  2440 μs    659 mW
  0:0   core       0 W       •          976 μs       •          89 mW
  0:1   uncore     0 W       •          976 μs       •          2 mW
 ```
@@ -164,9 +176,9 @@ OPTIONS:
 ```
 ```
 $ ki915
- DRM  Driver  Actual   Req'd    Min      Max      Boost       Min lim  Max lim
- ---  ------  -------  -------  -------  -------  ----------  -------  -------
- 1    i915    350 MHz  350 MHz  350 MHz  900 MHz  1000.0 MHz  350 MHz  1.1 GHz
+ i915  Bus id        Gpu cur  Gpu min  Gpu max  Gpu boost   Min lim  Max lim
+ ----  ------------  -------  -------  -------  ----------  -------  -------
+ 1     0000:00:02.0  350 MHz  350 MHz  900 MHz  1000.0 MHz  350 MHz  1.1 GHz
 ```
 
 ### knvml
@@ -193,7 +205,7 @@ OPTIONS:
 ```
 ```
 $ knvml
- DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
- ---  ------  -------  -------  ---------  ---------  -------  -------
- 0    nvidia  1.1 GHz  2.1 GHz  27.1 W     •          •        •
+ Nvml  Bus id        Gpu cur  Gpu lim  Power cur  Power lim  Min lim  Max lim
+ ----  ------------  -------  -------  ---------  ---------  -------  -------
+ 0     0000:01:00.0  510 MHz  2.1 GHz  13.0 W     •          •        •
 ```
