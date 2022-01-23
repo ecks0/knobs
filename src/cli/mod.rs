@@ -197,11 +197,11 @@ async fn run_subcommands<'a>(
     if !quiet {
         let formatters = async move {
             let mut formatters = vec![];
-                for applet in applets {
-                    if subcmds.is_empty() || subcmds.contains(applet.subcommand()) {
-                        formatters.extend(applet.format().await);
-                    }
+            for applet in applets {
+                if subcmds.is_empty() || subcmds.contains(applet.subcommand()) {
+                    formatters.extend(applet.format().await);
                 }
+            }
             formatters
         }
         .await;

@@ -10,8 +10,7 @@ to the `knobs` binary.
 | ---------- | ------- | ----------------------- |
 | cpu        | kcpu    | View or set cpu values  |
 | rapl       | krapl   | View or set rapl values |
-| drm        | kdrm    | View drm values         |
-| 915        | k915    | View or set i915 values |
+| i915       | ki915   | View or set i915 values |
 | nvml       | knvml   | View or set nvml values |
 
 To install symlinks for utilities alongside the `knobs` binary,
@@ -23,10 +22,50 @@ To install symlinks to a particular directory, run:
 ```
 knobs install /path/to/directory
 ```
-For details of using subcommands, run:
+Run utilities and subcommands with `-h` for short help or `--help` for long help.
+
+## Argument groups
+
+The cli accepts multiple argument groups, delimited by `--`. Argument
+groups have three useful properties:
+
+- All device ids are validated before any values are written.
+- Any error will abort the entire invocation.
+- Tables are printed once after all device values are written.
+
+### Subcommand argument group example
+
+```bash
+knobs \
+    cpu -c .. -g schedutil -x 2000 -- \
+    cpu -c 4.. -o false -- \
+    rapl -p 0 -c 0 -l 7 -- \
+    rapl -p 0 -c 1 -l 15
 ```
-knobs -h
+- `cpu`
+    - for all cpu ids, set governor to `schedutil` and max freq to 2000 mhz
+    - for cpu ids 4 and up, set offline
+- `rapl`
+    - for package 0, constraint 0, set power limit to 7 watts
+    - for package 0, constraint 1, set power limit to 15 watts
+
+### Utility argument group example
+
 ```
+kcpu \
+  -c .. -g schedutil -x 2000 -- \
+  -c 4.. -o false
+
+krapl \
+  -p 0 -c 0 -l 7 -- \
+  -p 0 -c 1 -l 15
+```
+- `kcpu`
+    - for all cpu ids, set governor to `schedutil` and max freq to 2000 mhz
+    - for cpu ids 4 and up, set offline
+- `krapl`
+    - for package 0, constraint 0, set power limit to 7 watts
+    - for package 0, constraint 1, set power limit to 15 watts
 
 ## Utilities
 
@@ -103,47 +142,16 @@ $ krapl
  0:1   uncore     0 W       •          976 μs       •          2 mW
 ```
 
-### kdrm
-
-View drm, i915, and nvml values.
-
-```
-$ kdrm -h
-kdrm 0.6.0
-
-USAGE:
-    kdrm
-
-OPTIONS:
-    -h, --help       Print help information
-    -V, --version    Print version information
-```
-```
-$ kdrm
- DRM  Driver  Bus  Bus id
- ---  ------  ---  ------------
- 0    nvidia  pci  0000:01:00.0
- 1    i915    pci  0000:00:02.0
-
- DRM  Driver  GPU cur  GPU lim  Power cur  Power lim  Min lim  Max lim
- ---  ------  -------  -------  ---------  ---------  -------  -------
- 0    nvidia  360 MHz  2.1 GHz  8.1 W      •          •        •
-
- DRM  Driver  Actual   Req'd    Min      Max      Boost       Min lim  Max lim
- ---  ------  -------  -------  -------  -------  ----------  -------  -------
- 1    i915    350 MHz  350 MHz  350 MHz  900 MHz  1000.0 MHz  350 MHz  1.1 GHz
-```
-
-### k915
+### ki915
 
 View or set i915 values.
 
 ```
-$ k915 -h
-k915 0.6.0
+$ ki915 -h
+ki915 0.6.0
 
 USAGE:
-    k915 [OPTIONS]
+    ki915 [OPTIONS]
 
 OPTIONS:
     -c, --card <IDS>     Target i915 drm card indexes or bus ids
@@ -155,7 +163,7 @@ OPTIONS:
     -V, --version        Print version information
 ```
 ```
-$ k915
+$ ki915
  DRM  Driver  Actual   Req'd    Min      Max      Boost       Min lim  Max lim
  ---  ------  -------  -------  -------  -------  ----------  -------  -------
  1    i915    350 MHz  350 MHz  350 MHz  900 MHz  1000.0 MHz  350 MHz  1.1 GHz
