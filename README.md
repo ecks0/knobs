@@ -17,7 +17,7 @@ Utilities and subcommands accept `-h` for short help and `--help` for long help.
 
 ## Utility symlinks
 
-### Installing
+### Installing symlinks
 
 Alongside the `knobs` binary:
 ```
@@ -28,7 +28,8 @@ To a particular directory:
 knobs install /path/to/directory
 ```
 
-### Uninstalling
+### Uninstalling symlink
+
 Alongside the `knobs` binary:
 ```
 knobs install -u
