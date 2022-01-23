@@ -50,10 +50,10 @@ async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Opt
 }
 
 async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
-    const INTERVAL_MS: u64 = 200;
+    const SAMPLE_MS: u64 = 200;
 
     log::trace!("rapl format energy_ujs start");
-    let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
+    let interval = env::parse::<u64>("RAPL_SAMPLE_MS").unwrap_or(SAMPLE_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
     let r = join_all(zones.iter().map(|v| energy_uj(v.id(), interval, scale))).await;
