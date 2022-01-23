@@ -9,6 +9,7 @@ use tokio::io::{stderr, stdout, AsyncWriteExt as _, BufWriter};
 
 pub(crate) use crate::app::parser::{I915Driver, NvmlDriver, Parser};
 use crate::applet::{self, Applet, Runner};
+use crate::util::counter;
 use crate::util::env::var_name;
 use crate::{Error, Result};
 
@@ -289,8 +290,8 @@ fn config_logging() {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{} {} [{:>30}] {}",
-                chrono::Local::now().format("%H:%M:%S%.6f"),
+                "{:>10} {} [{:>30}] {}",
+                counter::elapsed().as_micros(),
                 record.level().to_string().chars().next().unwrap_or('-'),
                 record.target(),
                 record.args()
@@ -300,6 +301,7 @@ fn config_logging() {
 }
 
 async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
+    counter::start();
     config_logging();
     App::new(argv).run().await
 }
