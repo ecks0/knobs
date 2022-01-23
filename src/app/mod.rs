@@ -126,14 +126,12 @@ impl App {
 
     async fn run(mut self) -> Result<()> {
         log::trace!("app run start");
-        if !self.argv.is_empty() {
-            if self.is_binary() {
-                self.make_binary_runners().await?;
-            } else {
-                self.make_subcommand_runners().await?;
-            }
-            self.join_runners().await?;
+        if self.is_binary() {
+            self.make_binary_runners().await?;
+        } else {
+            self.make_subcommand_runners().await?;
         }
+        self.join_runners().await?;
         if !self.quiet {
             self.format().await;
         }
@@ -147,92 +145,96 @@ impl App {
     }
 
     async fn make_binary_runners(&mut self) -> Result<()> {
-        log::trace!("app make binary runners start");
         let argv0 = self.argv0.as_str();
         let applet = self
             .applets
             .iter()
             .find(|a| Some(argv0) == a.binary())
             .expect("applet for binary");
-        let app_args_data = make_app_args();
-        let applet_args_data = applet.args();
-        let app_args = app_args_data.iter().map(clap::Arg::from);
-        let applet_args = applet_args_data.iter().map(clap::Arg::from).chain(app_args);
-        let argvs = self.argv.split(|v| "--" == v).map(|argv| {
-            let argv = argv.iter().map(|v| v.as_str());
-            iter::once(argv0).chain(argv)
-        });
-        for (i, argv) in argvs.enumerate() {
-            async {
-                let app = make_clap_app(argv0).about(applet.about()).args(applet_args.clone());
-                let matches = app.try_get_matches_from(argv)?;
-                let parser = Parser::from(&matches);
-                if parser.flag(QUIET).is_some() {
-                    self.quiet = true;
+        if !self.argv.is_empty() {
+            log::trace!("app make binary runners start");
+            let app_args_data = make_app_args();
+            let applet_args_data = applet.args();
+            let app_args = app_args_data.iter().map(clap::Arg::from);
+            let applet_args = applet_args_data.iter().map(clap::Arg::from).chain(app_args);
+            let argvs = self.argv.split(|v| "--" == v).map(|argv| {
+                let argv = argv.iter().map(|v| v.as_str());
+                iter::once(argv0).chain(argv)
+            });
+            for (i, argv) in argvs.enumerate() {
+                async {
+                    let app = make_clap_app(argv0).about(applet.about()).args(applet_args.clone());
+                    let matches = app.try_get_matches_from(argv)?;
+                    let parser = Parser::from(&matches);
+                    if parser.flag(QUIET).is_some() {
+                        self.quiet = true;
+                    }
+                    let runner = applet.run(parser).await?;
+                    self.runners.push((i, runner));
+                    Ok(())
                 }
-                let runner = applet.run(parser).await?;
-                self.runners.push((i, runner));
-                Ok(())
+                .await
+                .map_err(|e| Error::group(e, i + 1))?;
             }
-            .await
-            .map_err(|e| Error::group(e, i + 1))?;
+            log::trace!("app make binary runners done");
         }
         if !self.quiet {
             self.format_subcmds.insert(applet.subcommand());
         }
-        log::trace!("app make binary runners done");
         Ok(())
     }
 
     async fn make_subcommand_runners(&mut self) -> Result<()> {
-        log::trace!("app make subcommand runners start");
-        let argv0 = self.argv0.as_str();
-        let app_args_data = make_app_args();
-        let applet_args_data: Vec<_> =
-            self.applets.iter().map(|a| (a.subcommand(), a.about(), a.args())).collect();
-        let app_args = app_args_data.iter().map(clap::Arg::from);
-        let applet_args = applet_args_data
-            .iter()
-            .map(|(n, a, args)| (*n, *a, args.iter().map(clap::Arg::from).collect::<Vec<_>>()));
-        let argvs = self.argv.split(|v| "--" == v).map(|argv| {
-            let argv = argv.iter().map(|v| v.as_str());
-            iter::once(argv0).chain(argv)
-        });
-        for (i, argv) in argvs.enumerate() {
-            async {
-                let matches = applet_args
-                    .clone()
-                    .fold(
-                        make_clap_app(argv0).args(app_args.clone()),
-                        |clap_app, (name, about, args)| {
-                            let subcmd = make_clap_app(name).about(about).args(args);
-                            clap_app.subcommand(subcmd)
-                        },
-                    )
-                    .try_get_matches_from(argv)?;
-                if Parser::from(&matches).flag(QUIET).is_some() {
-                    self.quiet = true;
-                    self.format_subcmds.clear();
-                }
-                if let Some((subcmd, subcmd_matches)) = matches.subcommand() {
-                    let applet = self
-                        .applets
-                        .iter()
-                        .find(|a| subcmd == a.subcommand())
-                        .expect("applet for subcommand");
-                    let parser = Parser::from(subcmd_matches);
-                    let runner = applet.run(parser).await?;
-                    self.runners.push((i, runner));
-                    if !self.quiet {
-                        self.format_subcmds.insert(applet.subcommand());
+        if !self.argv.is_empty() {
+            log::trace!("app make subcommand runners start");
+            let argv0 = self.argv0.as_str();
+            let app_args_data = make_app_args();
+            let applet_args_data: Vec<_> =
+                self.applets.iter().map(|a| (a.subcommand(), a.about(), a.args())).collect();
+            let app_args = app_args_data.iter().map(clap::Arg::from);
+            let applet_args = applet_args_data
+                .iter()
+                .map(|(n, a, args)| (*n, *a, args.iter().map(clap::Arg::from).collect::<Vec<_>>()));
+            let argvs = self.argv.split(|v| "--" == v).map(|argv| {
+                let argv = argv.iter().map(|v| v.as_str());
+                iter::once(argv0).chain(argv)
+            });
+            for (i, argv) in argvs.enumerate() {
+                async {
+                    let matches = applet_args
+                        .clone()
+                        .fold(
+                            make_clap_app(argv0).args(app_args.clone()),
+                            |clap_app, (name, about, args)| {
+                                let subcmd = make_clap_app(name).about(about).args(args);
+                                clap_app.subcommand(subcmd)
+                            },
+                        )
+                        .try_get_matches_from(argv)?;
+                    if Parser::from(&matches).flag(QUIET).is_some() {
+                        self.quiet = true;
+                        self.format_subcmds.clear();
                     }
+                    if let Some((subcmd, subcmd_matches)) = matches.subcommand() {
+                        let applet = self
+                            .applets
+                            .iter()
+                            .find(|a| subcmd == a.subcommand())
+                            .expect("applet for subcommand");
+                        let parser = Parser::from(subcmd_matches);
+                        let runner = applet.run(parser).await?;
+                        self.runners.push((i, runner));
+                        if !self.quiet {
+                            self.format_subcmds.insert(applet.subcommand());
+                        }
+                    }
+                    Ok(())
                 }
-                Ok(())
+                .await
+                .map_err(|e| Error::group(e, i + 1))?;
             }
-            .await
-            .map_err(|e| Error::group(e, i + 1))?;
+            log::trace!("app make subcommand runners done");
         }
-        log::trace!("app make subcommand runners done");
         Ok(())
     }
 
