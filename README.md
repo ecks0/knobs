@@ -77,7 +77,7 @@ krapl \
 ## Environment variables
 
 - `KNOBS_LOG` - Set to `trace` to see what's happening under the hood. Default `error`.
-- `KNOBS_RAPL_SAMPLE_MS` - set to a value between `1` and `1000` to control rapl `energy_uj` sample interval. Default `200`.
+- `KNOBS_RAPL_SAMPLE_MS` - set to a value between `1` (least accurate) and `1000` (most accurate) to control rapl `energy_uj` sample interval. Default `200`.
 
 ## Utility reference
 
