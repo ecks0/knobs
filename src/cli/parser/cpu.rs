@@ -143,6 +143,7 @@ pub(super) struct CpuIds(Vec<u64>);
 
 impl CpuIds {
     pub(super) async fn from_str(s: &str) -> Result<Self> {
+        log::trace!("parse cpu ids start");
         let mut v: Vec<_> = stream::iter(s.split(','))
             .map(Ok)
             .and_then(CpuIdRange::from_str)
@@ -154,6 +155,7 @@ impl CpuIds {
             .into_iter()
             .collect();
         v.sort_unstable();
+        log::trace!("parse cpu ids done");
         Ok(Self(v))
     }
 }

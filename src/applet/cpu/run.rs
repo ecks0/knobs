@@ -7,15 +7,18 @@ use crate::Result;
 
 async fn wait_for_onoff() {
     let millis = 300;
+    log::trace!("wait {}ms for cpu online/offline", millis);
     sleep(Duration::from_millis(millis)).await;
 }
 
 async fn wait_for_policy() {
     let millis = 100;
+    log::trace!("wait {}ms for cpu policy update", millis);
     sleep(Duration::from_millis(millis)).await;
 }
 
 async fn set_online(ids: Vec<u64>) -> Result<Vec<u64>> {
+    log::trace!("ensure cpus are online start");
     let mut onlined = vec![];
     if !ids.is_empty() {
         let offline: Vec<_> = syx::cpu::offline_ids().try_collect().await?;
@@ -26,10 +29,12 @@ async fn set_online(ids: Vec<u64>) -> Result<Vec<u64>> {
             }
         }
     }
+    log::trace!("ensure cpus are online done");
     Ok(onlined)
 }
 
 async fn set_offline(ids: Vec<u64>) -> Result<Vec<u64>> {
+    log::trace!("ensure cpus are offline start");
     let mut offlined = vec![];
     if !ids.is_empty() {
         let online: Vec<_> = syx::cpu::online_ids().try_collect().await?;
@@ -40,6 +45,7 @@ async fn set_offline(ids: Vec<u64>) -> Result<Vec<u64>> {
             }
         }
     }
+    log::trace!("ensure cpus are offline done");
     Ok(offlined)
 }
 

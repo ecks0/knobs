@@ -181,6 +181,7 @@ where
     T: DrmDriver,
 {
     pub(super) async fn from_str(v: &str) -> Result<Self> {
+        log::trace!("parse drm ids start");
         let mut v: Vec<_> = stream::iter(v.split(','))
             .map(Result::Ok)
             .and_then(|v| async move {
@@ -192,6 +193,7 @@ where
         v.sort_unstable();
         v.dedup();
         let r = Self(v, PhantomData);
+        log::trace!("parse drm ids done");
         Ok(r)
     }
 }

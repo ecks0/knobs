@@ -200,7 +200,7 @@ pub(super) async fn format() -> Vec<Formatter> {
         let cpufreqs: Vec<_> = ids.clone().into_iter().map(Cpufreq::new).collect();
         let pstates: Vec<_> = ids.into_iter().map(PstatePolicy::new).collect();
         let system = PstateSystem::default();
-        log::trace!("cpu format formatters");
+        log::trace!("cpu format futures");
         formatters.extend([
             cpu_cpufreq(cpus, cpufreqs.clone()).boxed(),
             governors(cpufreqs).boxed(),

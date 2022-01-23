@@ -36,28 +36,28 @@ async fn limit_window(zone: &Zone, constraint: &str) -> (Option<u64>, Option<u64
 }
 
 async fn energy_uj(zone: ZoneId, interval: Duration, scale: f64) -> (ZoneId, Option<u64>) {
-    log::trace!("rapl summary energy_uj start");
+    log::trace!("rapl format energy_uj start {:?}", zone);
     if let Ok(a) = zone::energy_uj(zone).await {
         sleep(interval).await;
         if let Ok(b) = zone::energy_uj(zone).await {
             let v = ((b - a) as f64 * scale).trunc() as u64;
-            log::trace!("rapl summary energy_uj done");
+            log::trace!("rapl format energy_uj done {:?}", zone);
             return (zone, Some(v));
         }
     }
-    log::trace!("rapl summary energy_uj none");
+    log::trace!("rapl format energy_uj none {:?}", zone);
     (zone, None)
 }
 
 async fn energy_ujs(zones: &[Zone]) -> Vec<(ZoneId, Option<u64>)> {
     const INTERVAL_MS: u64 = 200;
 
-    log::trace!("rapl summary energy_ujs start");
+    log::trace!("rapl format energy_ujs start");
     let interval = env::parse::<u64>("RAPL_INTERVAL_MS").unwrap_or(INTERVAL_MS).max(1).min(1000);
     let scale = 1000. / interval as f64;
     let interval = Duration::from_millis(interval);
     let r = join_all(zones.iter().map(|v| energy_uj(v.id(), interval, scale))).await;
-    log::trace!("rapl summary energy_ujs done");
+    log::trace!("rapl format energy_ujs done");
     r
 }
 
@@ -66,10 +66,10 @@ async fn not_found() -> Option<String> {
 }
 
 async fn table() -> Option<String> {
-    log::trace!("rapl summary table start");
+    log::trace!("rapl format table start");
     let mut zones: Vec<_> = Zone::all().try_collect().await.unwrap_or_default();
     if zones.is_empty() {
-        log::trace!("rapl summary table none");
+        log::trace!("rapl format table none");
         not_found().await
     } else {
         zones.sort_by_key(|v| v.id());
@@ -102,14 +102,14 @@ async fn table() -> Option<String> {
         ]);
         tab.rows(rows);
         let r = Some(tab.into());
-        log::trace!("rapl summary table done");
+        log::trace!("rapl format table done");
         r
     }
 }
 
 pub(super) async fn format() -> Vec<Formatter> {
-    log::trace!("rapl summary start");
+    log::trace!("rapl format start");
     let formatters = vec![table().boxed()];
-    log::trace!("rapl summary done");
+    log::trace!("rapl format done");
     formatters
 }

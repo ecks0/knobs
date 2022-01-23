@@ -101,6 +101,7 @@ fn app_args() -> Vec<Arg> {
 }
 
 async fn format(formatters: Vec<Formatter>) {
+    log::trace!("format start");
     let mut stdout = BufWriter::with_capacity(4 * 1024, stdout());
     let mut ok = false;
     for output in join_all(formatters).await.into_iter().flatten() {
@@ -114,6 +115,7 @@ async fn format(formatters: Vec<Formatter>) {
     if ok {
         stdout.flush().await.unwrap();
     }
+    log::trace!("format done");
 }
 
 fn make_clap_app<'a, S>(name: S) -> clap::App<'a>
@@ -132,6 +134,7 @@ async fn run_subcommands<'a>(
     argv: &'a [String],
     applets: Vec<Box<dyn Applet>>,
 ) -> Result<()> {
+    log::trace!("run_subcommand start");
     let (quiet, subcmds, runners) = async {
         let app_args_data = app_args();
         let applet_args_data: Vec<_> =
@@ -196,6 +199,7 @@ async fn run_subcommands<'a>(
         runner.await.map_err(|e| Error::group(e, i))?;
     }
     format(formatters).await;
+    log::trace!("run_subcommand done");
     Ok(())
 }
 
@@ -204,6 +208,7 @@ async fn run_binary<'a>(
     argv: &'a [String],
     applets: Vec<Box<dyn Applet>>,
 ) -> Result<()> {
+    log::trace!("run_binary start");
     let applet = applets
         .into_iter()
         .find(|a| Some(argv0) == a.binary())
@@ -245,6 +250,7 @@ async fn run_binary<'a>(
         runner.await.map_err(|e| Error::group(e, i))?;
     }
     format(formatters).await;
+    log::trace!("run_binary done");
     Ok(())
 }
 
@@ -257,14 +263,17 @@ fn argv0(argv: &[String]) -> &str {
 
 pub async fn try_run_with_args(argv: impl IntoIterator<Item = String>) -> Result<()> {
     config_logging();
+    log::trace!("try_run_with_args start");
     let argv: Vec<_> = argv.into_iter().collect();
     let argv0 = argv0(&argv);
     let applets = applet::all();
-    if applets.iter().any(|a| Some(argv0) == a.binary()) {
+    let r = if applets.iter().any(|a| Some(argv0) == a.binary()) {
         run_binary(argv0, &argv[1..], applets).await
     } else {
         run_subcommands(argv0, &argv[1..], applets).await
-    }
+    };
+    log::trace!("try_run_with_args done");
+    r
 }
 
 pub async fn run_with_args(argv: impl IntoIterator<Item = String>) {

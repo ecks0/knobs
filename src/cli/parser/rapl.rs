@@ -6,6 +6,7 @@ pub(super) async fn constraint_ids(
     subzone: Option<u64>,
     constraints: Vec<u64>,
 ) -> Result<RaplConstraintIds> {
+    log::trace!("parse rapl constraint ids start");
     if !syx::intel_rapl::zone::exists((package, subzone)).await? {
         let mut s = format!("package {} ", package);
         if let Some(subzone) = subzone {
@@ -28,5 +29,6 @@ pub(super) async fn constraint_ids(
         subzone,
         constraints,
     };
+    log::trace!("parse rapl constraint ids done");
     Ok(r)
 }
